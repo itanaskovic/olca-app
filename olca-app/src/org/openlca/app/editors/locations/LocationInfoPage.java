@@ -15,7 +15,6 @@ import org.openlca.app.editors.processes.kml.KmlPrettifyFunction;
 import org.openlca.app.editors.processes.kml.KmlUtil;
 import org.openlca.app.rcp.html.HtmlView;
 import org.openlca.app.rcp.html.WebPage;
-import org.openlca.app.rcp.images.Icon;
 import org.openlca.app.util.Actions;
 import org.openlca.app.util.UI;
 import org.openlca.core.model.Location;
@@ -24,14 +23,13 @@ import org.slf4j.LoggerFactory;
 
 import javafx.scene.web.WebEngine;
 
-class LocationInfoPage extends ModelPage<Location> implements WebPage {
-
-	String kml;
-	boolean hasValidKml = true;
+public class LocationInfoPage extends ModelPage<Location> implements WebPage {
 
 	private Logger log = LoggerFactory.getLogger(getClass());
 	private FormToolkit toolkit;
 	private WebEngine webkit;
+	private String kml;
+	private boolean isValidKml = true;
 	private ScrolledForm form;
 
 	LocationInfoPage(LocationEditor editor) {
@@ -52,8 +50,7 @@ class LocationInfoPage extends ModelPage<Location> implements WebPage {
 	}
 
 	private void createAdditionalInfo(Composite body) {
-		Composite composite = UI.formSection(body, toolkit,
-				M.AdditionalInformation, 3);
+		Composite composite = UI.formSection(body, toolkit, M.AdditionalInformation, 3);
 		text(composite, M.Code, "code");
 		doubleText(composite, M.Longitude, "longitude");
 		doubleText(composite, M.Latitude, "latitude");
@@ -69,7 +66,7 @@ class LocationInfoPage extends ModelPage<Location> implements WebPage {
 		section.setText(M.KmlEditor);
 		Composite composite = toolkit.createComposite(section);
 		section.setClient(composite);
-		Actions.bind(section, new UploadKmlAction(), new ClearAction());
+		Actions.bind(section, new ClearAction());
 		UI.gridLayout(composite, 1);
 		UI.gridData(composite, true, true);
 		Control canvas = UI.createWebView(composite, this);
@@ -81,19 +78,21 @@ class LocationInfoPage extends ModelPage<Location> implements WebPage {
 		return HtmlView.KML_EDITOR.getUrl();
 	}
 
+	String getKml() {
+		return kml;
+	}
+
+	boolean isValidKml() {
+		return isValidKml;
+	}
+
 	@Override
 	public void onLoaded(WebEngine webkit) {
 		this.webkit = webkit;
-		UI.bindVar(webkit, "java", new JavaCallback());
+		UI.bindVar(webkit, "java", new KmlChangedFunction());
 		UI.bindVar(webkit, "prettifier", new KmlPrettifyFunction(b -> {
-			hasValidKml = b;
+			isValidKml = b;
 		}));
-		try {
-			webkit.executeScript("setEmbedded()");
-			webkit.executeScript("bridgeConsole()");
-		} catch (Exception e) {
-			log.error("failed to initialize KML editor", e);
-		}
 		updateKml();
 	}
 
@@ -104,26 +103,23 @@ class LocationInfoPage extends ModelPage<Location> implements WebPage {
 		kml = kml.replace("\r\n", "").replace("\n", "").replace("\r", "");
 		try {
 			webkit.executeScript("setKML('" + kml + "')");
+			webkit.executeScript("setEmbedded()");
 		} catch (Exception e) {
 			log.error("failed to set KML data", e);
 		}
 	}
 
-	public class JavaCallback {
+	public class KmlChangedFunction {
 
 		public void kmlChanged(String data) {
 			kml = data;
 			try {
-				hasValidKml = (Boolean) webkit.executeScript("isValidKml();");
+				isValidKml = (Boolean) webkit.executeScript("isValidKml();");
 				getEditor().setDirty(true);
 			} catch (Exception e) {
 				Logger log = LoggerFactory.getLogger(getClass());
 				log.error("failed to call isValidKml", e);
 			}
-		}
-
-		public void log(String message) {
-			log.debug(message);
 		}
 	}
 
@@ -131,38 +127,12 @@ class LocationInfoPage extends ModelPage<Location> implements WebPage {
 
 		private ClearAction() {
 			super(M.ClearData);
-			setImageDescriptor(Icon.DELETE.descriptor());
 		}
 
 		@Override
 		public void run() {
 			try {
 				webkit.executeScript("onClear();");
-			} catch (Exception e) {
-				Logger log = LoggerFactory.getLogger(getClass());
-				log.error("failed to call onClear", e);
-			}
-		}
-	}
-
-	private class UploadKmlAction extends Action {
-		private UploadKmlAction() {
-			super("#Upload KML");
-			setImageDescriptor(Icon.UP.descriptor());
-		}
-
-		@Override
-		public void run() {
-			try {
-				Object kmlObj = webkit.executeScript("getKML()");
-				if (!(kmlObj instanceof String)) {
-					log.debug("KML editor did not returned a string");
-					kml = "";
-				} else {
-					kml = (String) kmlObj;
-				}
-				new KmlPrettifyFunction(b -> hasValidKml = b).prettifyKML(kml);
-				getEditor().setDirty(true);
 			} catch (Exception e) {
 				Logger log = LoggerFactory.getLogger(getClass());
 				log.error("failed to call onClear", e);
