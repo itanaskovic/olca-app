@@ -1,5 +1,6 @@
 package org.openlca.app.editors.systems;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -13,6 +14,7 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.TableItem;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 import org.eclipse.ui.forms.widgets.Section;
+import org.openlca.app.App;
 import org.openlca.app.M;
 import org.openlca.app.components.ParameterRedefDialog;
 import org.openlca.app.components.UncertaintyCellEditor;
@@ -21,7 +23,9 @@ import org.openlca.app.db.Database;
 import org.openlca.app.editors.comments.CommentAction;
 import org.openlca.app.editors.comments.CommentDialogModifier;
 import org.openlca.app.editors.comments.CommentPaths;
+import org.openlca.app.rcp.images.Icon;
 import org.openlca.app.rcp.images.Images;
+import org.openlca.app.search.ParameterUsagePage;
 import org.openlca.app.util.Actions;
 import org.openlca.app.util.Labels;
 import org.openlca.app.util.tables.TableClipboard;
@@ -82,7 +86,8 @@ class ParameterRedefTable {
 	private CategorizedDescriptor getContext(ParameterRedef p) {
 		if (p.getContextId() == null)
 			return null;
-		return Daos.categorized(Database.get(), p.getContextType()).getDescriptor(p.getContextId());
+		return Daos.categorized(Database.get(), p.getContextType())
+				.getDescriptor(p.getContextId());
 	}
 
 	private String[] getColumnHeaders() {
@@ -95,11 +100,19 @@ class ParameterRedefTable {
 	}
 
 	public void bindActions(Section section) {
-		Action addAction = Actions.onAdd(this::add);
-		Action removeAction = Actions.onRemove(this::remove);
+		Action add = Actions.onAdd(this::add);
+		Action remove = Actions.onRemove(this::remove);
 		Action copy = TableClipboard.onCopy(viewer);
-		CommentAction.bindTo(section, "parameterRedefs", editor.getComments(), addAction, removeAction);
-		Actions.bind(viewer, addAction, removeAction, copy);
+		Action paste = TableClipboard.onPaste(viewer, this::onPaste);
+		Action usage = Actions.create(M.Usage, Icon.LINK.descriptor(), () -> {
+			ParameterRedef redef = Viewers.getFirstSelected(viewer);
+			if (redef != null) {
+				ParameterUsagePage.show(redef.getName());
+			}
+		});
+		CommentAction.bindTo(section, "parameterRedefs",
+				editor.getComments(), add, remove);
+		Actions.bind(viewer, add, remove, copy, paste, usage);
 		Tables.onDeletePressed(viewer, (e) -> remove());
 		Tables.onDoubleClick(viewer, (event) -> {
 			TableItem item = Tables.getItem(viewer, event);
@@ -123,6 +136,26 @@ class ParameterRedefTable {
 		}
 		viewer.setInput(systemRedefs);
 		editor.setDirty(true);
+	}
+
+	private void onPaste(String text) {
+		List<ParameterRedef> newList = new ArrayList<>();
+		App.runWithProgress("Paste parameters ...",
+				() -> newList.addAll(ParameterClipboard.read(text)));
+		if (newList.isEmpty())
+			return;
+		List<ParameterRedef> redefs = editor.getModel().parameterRedefs;
+		boolean added = false;
+		for (ParameterRedef redef : newList) {
+			if (!contains(redef, redefs)) {
+				redefs.add(redef.clone());
+				added = true;
+			}
+		}
+		if (added) {
+			viewer.setInput(redefs);
+			editor.setDirty(true);
+		}
 	}
 
 	private boolean contains(ParameterRedef redef, List<ParameterRedef> redefs) {

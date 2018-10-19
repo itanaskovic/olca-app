@@ -13,10 +13,8 @@ import org.openlca.app.rcp.RcpActivator;
 import org.openlca.app.rcp.html.HtmlFolder;
 import org.openlca.app.rcp.html.HtmlView;
 import org.openlca.app.rcp.html.WebPage;
-import org.openlca.app.util.DefaultInput;
 import org.openlca.app.util.Desktop;
 import org.openlca.app.util.EclipseCommandLine;
-import org.openlca.app.util.Editors;
 import org.openlca.app.util.UI;
 import org.openlca.util.OS;
 import org.slf4j.Logger;
@@ -31,7 +29,7 @@ public class StartPage extends SimpleFormEditor {
 	private static Logger log = LoggerFactory.getLogger(StartPage.class);
 
 	public static void open() {
-		Editors.open(new DefaultInput(TYPE, UUID.randomUUID().toString(), M.Welcome), TYPE);
+		Editors.open(new SimpleEditorInput(TYPE, UUID.randomUUID().toString(), M.Welcome), TYPE);
 	}
 
 	@Override

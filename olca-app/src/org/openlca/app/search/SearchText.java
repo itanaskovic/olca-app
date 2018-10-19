@@ -1,4 +1,4 @@
-package org.openlca.app;
+package org.openlca.app.search;
 
 import org.eclipse.jface.action.Action;
 import org.eclipse.jface.action.IMenuCreator;
@@ -15,11 +15,13 @@ import org.eclipse.swt.widgets.MenuItem;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.swt.widgets.ToolBar;
 import org.eclipse.ui.menus.WorkbenchWindowControlContribution;
+import org.openlca.app.App;
+import org.openlca.app.M;
 import org.openlca.app.db.Database;
 import org.openlca.app.rcp.images.Icon;
 import org.openlca.app.rcp.images.Images;
 import org.openlca.app.util.Controls;
-import org.openlca.app.util.InformationPopup;
+import org.openlca.app.util.Info;
 import org.openlca.app.util.UI;
 import org.openlca.core.model.ModelType;
 import org.slf4j.Logger;
@@ -66,14 +68,18 @@ public class SearchText extends WorkbenchWindowControlContribution {
 
 	private void doSearch(ModelType typeFilter) {
 		if (Database.get() == null) {
-			InformationPopup.show(M.NeedOpenDatabase);
+			Info.popup(M.NeedOpenDatabase);
 			return;
 		}
 		String term = text.getText();
+		if (typeFilter == ModelType.PARAMETER) {
+			ParameterUsagePage.show(term);
+			return;
+		}
 		Search search = new Search(Database.get(), text.getText());
 		search.typeFilter = typeFilter;
 		App.run(M.Searching, search,
-				() -> SearchResultView.show(term, search.getResult()));
+				() -> SearchPage.show(term, search.getResult()));
 	}
 
 	@SuppressWarnings("unused")

@@ -1,4 +1,4 @@
-package org.openlca.app.util;
+package org.openlca.app.editors;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -21,18 +21,20 @@ import org.openlca.app.M;
 import org.openlca.app.devtools.js.JavaScriptEditor;
 import org.openlca.app.devtools.python.PythonEditor;
 import org.openlca.app.devtools.sql.SqlEditor;
-import org.openlca.app.editors.LogFileEditor;
-import org.openlca.app.editors.ModelEditor;
-import org.openlca.app.editors.StartPage;
 import org.openlca.app.rcp.images.Icon;
+import org.openlca.app.util.Actions;
 import org.openlca.core.model.CategorizedEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class Editors {
 
-	private static String[] PREVENT_FROM_CLOSING = { SqlEditor.TYPE, PythonEditor.TYPE, JavaScriptEditor.TYPE,
-			StartPage.TYPE, LogFileEditor.TYPE };
+	private static String[] PREVENT_FROM_CLOSING = {
+			SqlEditor.TYPE,
+			PythonEditor.TYPE,
+			JavaScriptEditor.TYPE,
+			StartPage.TYPE,
+			LogFileEditor.TYPE };
 	private static Logger log = LoggerFactory.getLogger(Editors.class);
 
 	private Editors() {
@@ -40,8 +42,8 @@ public class Editors {
 
 	/**
 	 * Adds a refresh function to the tool-bar of the given form (content of a
-	 * editor page). When this function is executed the given editor is closed
-	 * and opened again.
+	 * editor page). When this function is executed the given editor is closed and
+	 * opened again.
 	 */
 	public static void addRefresh(ScrolledForm form, ModelEditor<?> editor) {
 		if (form == null || editor == null)
@@ -63,8 +65,8 @@ public class Editors {
 		try {
 			List<IEditorReference> rest = new ArrayList<>();
 			for (IEditorReference ref : getReferences()) {
-				if (ref.getEditorInput() instanceof DefaultInput) {
-					DefaultInput input = (DefaultInput) ref.getEditorInput();
+				if (ref.getEditorInput() instanceof SimpleEditorInput) {
+					SimpleEditorInput input = (SimpleEditorInput) ref.getEditorInput();
 					List<String> preventClosing = Arrays.asList(PREVENT_FROM_CLOSING);
 					if (preventClosing.contains(input.type))
 						continue;

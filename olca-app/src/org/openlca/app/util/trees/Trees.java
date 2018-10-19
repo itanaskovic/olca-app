@@ -30,7 +30,6 @@ import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Tree;
 import org.eclipse.swt.widgets.TreeColumn;
 import org.eclipse.swt.widgets.TreeItem;
-import org.openlca.app.components.IModelDropHandler;
 import org.openlca.app.components.ModelTransfer;
 import org.openlca.app.util.UI;
 import org.openlca.app.util.viewers.Sorter;
@@ -62,7 +61,9 @@ public class Trees {
 			viewer.setLabelProvider(label);
 		}
 		GridData data = UI.gridData(tree, true, true);
-		data.minimumHeight = 150;
+		data.minimumHeight = 120;
+		Point p = parent.computeSize(SWT.DEFAULT, SWT.DEFAULT);
+		data.heightHint = p.y < 120 ? 120 : p.y;
 		return viewer;
 	}
 
@@ -84,8 +85,8 @@ public class Trees {
 	}
 
 	public static void addDropSupport(TreeViewer tree,
-			final IModelDropHandler handler) {
-		final Transfer transfer = ModelTransfer.getInstance();
+			Consumer<List<BaseDescriptor>> handler) {
+		Transfer transfer = ModelTransfer.getInstance();
 		DropTarget dropTarget = new DropTarget(tree.getTree(), DND.DROP_COPY
 				| DND.DROP_MOVE | DND.DROP_DEFAULT);
 		dropTarget.setTransfer(new Transfer[] { transfer });
@@ -96,7 +97,7 @@ public class Trees {
 					return;
 				List<BaseDescriptor> list = ModelTransfer
 						.getBaseDescriptors(event.data);
-				handler.handleDrop(list);
+				handler.accept(list);
 			}
 		});
 	}

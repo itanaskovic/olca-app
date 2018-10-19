@@ -4,7 +4,6 @@ import org.eclipse.jface.viewers.SelectionChangedEvent;
 import org.eclipse.jface.viewers.StructuredSelection;
 import org.eclipse.jface.viewers.TreeViewer;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
@@ -22,12 +21,11 @@ import org.openlca.app.util.Labels;
 import org.openlca.app.util.UI;
 import org.openlca.app.util.viewers.Viewers;
 import org.openlca.core.database.ProcessDao;
-import org.openlca.core.matrix.product.index.LinkingMethod;
+import org.openlca.core.matrix.LinkingConfig;
 import org.openlca.core.model.Exchange;
 import org.openlca.core.model.FlowType;
 import org.openlca.core.model.ModelType;
 import org.openlca.core.model.Process;
-import org.openlca.core.model.ProcessType;
 import org.openlca.core.model.ProductSystem;
 import org.openlca.core.model.descriptors.Descriptors;
 import org.openlca.core.model.descriptors.ProcessDescriptor;
@@ -40,17 +38,13 @@ class ProductSystemWizardPage extends AbstractWizardPage<ProductSystem> {
 
 	private Logger log = LoggerFactory.getLogger(this.getClass());
 
-	private TreeViewer processTree;
 	private Process refProcess;
-	private Button supplyChainCheck;
-	private Button ignoreProvidersRadio;
-	private Button preferProvidersRadio;
-	private Button onlyLinkProvidersRadio;
-	private Button preferUnitRadio;
-	private Button preferSystemRadio;
-	private Button cutoffCheck;
-	private Text cutoffText;
 	private Text filterText;
+	private TreeViewer processTree;
+	private Button autoLinkCheck;
+	private Button checkLinksCheck;
+
+	private LinkingConfigPanel linkingPanel;
 
 	ProductSystemWizardPage() {
 		super("ProductSystemWizardPage");
@@ -102,6 +96,10 @@ class ProductSystemWizardPage extends AbstractWizardPage<ProductSystem> {
 		try {
 			ProcessDao dao = new ProcessDao(Database.get());
 			refProcess = dao.getForId(elem.getContent().getId());
+			if (Strings.isNullOrEmpty(nameText.getText())) {
+				String name = Labels.getDisplayName(refProcess);
+				nameText.setText(name != null ? name : "");
+			}
 			checkInput();
 		} catch (Exception ex) {
 			log.error("failed to load process", ex);
@@ -110,66 +108,24 @@ class ProductSystemWizardPage extends AbstractWizardPage<ProductSystem> {
 
 	private void createOptions(Composite comp) {
 		UI.filler(comp);
-		supplyChainCheck = UI.checkBox(comp, M.AutoLinkProcesses);
-		Composite methodGroup = createRadioGroup(comp, M.ProviderLinking);
-		ignoreProvidersRadio = UI.formRadio(methodGroup, M.IgnoreDefaultProviders);
-		preferProvidersRadio = UI.formRadio(methodGroup, M.PreferDefaultProviders);
-		onlyLinkProvidersRadio = UI.formRadio(methodGroup, M.OnlyLinkDefaultProviders);
-		Composite typeGroup = createRadioGroup(comp, M.PreferredProcessType);
-		preferUnitRadio = UI.formRadio(typeGroup, Labels.processType(ProcessType.UNIT_PROCESS));
-		preferSystemRadio = UI.formRadio(typeGroup, Labels.processType(ProcessType.LCI_RESULT));
-		createCutoffText(comp);
-		initialSelection();
-		initializeChangeHandler();
-	}
-
-	private Composite createRadioGroup(Composite parent, String label) {
-		UI.filler(parent);
-		UI.formLabel(parent, label);
-		UI.filler(parent);
-		Composite group = UI.formComposite(parent);
-		UI.gridLayout(group, 2, 10, 0).marginLeft = 10;
-		return group;
-	}
-
-	private void createCutoffText(Composite comp) {
+		autoLinkCheck = UI.checkBox(comp, M.AutoLinkProcesses);
+		autoLinkCheck.setSelection(true);
 		UI.filler(comp);
-		Composite inner = new Composite(comp, SWT.NONE);
-		UI.gridLayout(inner, 2, 5, 0);
-		cutoffCheck = UI.checkBox(inner, M.Cutoff);
-		cutoffText = new Text(inner, SWT.BORDER);
-		UI.gridData(cutoffText, true, false);
-	}
-
-	private void initialSelection() {
-		supplyChainCheck.setSelection(true);
-		preferProvidersRadio.setSelection(true);
-		preferSystemRadio.setSelection(true);
-		cutoffText.setEnabled(false);
-	}
-
-	private void initializeChangeHandler() {
-		Controls.onSelect(supplyChainCheck, this::onAutoLinkChange);
-		Controls.onSelect(ignoreProvidersRadio, this::onLinkingMethodChange);
-		Controls.onSelect(preferProvidersRadio, this::onLinkingMethodChange);
-		Controls.onSelect(onlyLinkProvidersRadio, this::onLinkingMethodChange);
-		Controls.onSelect(cutoffCheck, e -> cutoffText.setEnabled(cutoffCheck.getSelection()));
-	}
-
-	private void onAutoLinkChange(SelectionEvent e) {
-		boolean autolink = supplyChainCheck.getSelection();
-		preferUnitRadio.setEnabled(autolink);
-		preferSystemRadio.setEnabled(autolink);
-		ignoreProvidersRadio.setEnabled(autolink);
-		preferProvidersRadio.setEnabled(autolink);
-		onlyLinkProvidersRadio.setEnabled(autolink);
-		cutoffCheck.setEnabled(autolink);
-		cutoffText.setEnabled(autolink);
-	}
-
-	private void onLinkingMethodChange(SelectionEvent e) {
-		preferUnitRadio.setEnabled(!onlyLinkProvidersRadio.getSelection());
-		preferSystemRadio.setEnabled(!onlyLinkProvidersRadio.getSelection());
+		checkLinksCheck = UI.checkBox(comp,
+				"Check multi-provider links (experimental)");
+		linkingPanel = new LinkingConfigPanel(comp);
+		Controls.onSelect(autoLinkCheck, e -> {
+			boolean enabled = autoLinkCheck.getSelection();
+			linkingPanel.setEnabled(enabled);
+			checkLinksCheck.setEnabled(enabled);
+			if (enabled && checkLinksCheck.getSelection()) {
+				linkingPanel.setTypeChecksEnabled(false);
+			}
+		});
+		Controls.onSelect(checkLinksCheck, e -> {
+			boolean b = !checkLinksCheck.getSelection();
+			linkingPanel.setTypeChecksEnabled(b);
+		});
 	}
 
 	@Override
@@ -204,40 +160,15 @@ class ProductSystemWizardPage extends AbstractWizardPage<ProductSystem> {
 	}
 
 	boolean addSupplyChain() {
-		return supplyChainCheck.getSelection();
+		return autoLinkCheck.getSelection();
 	}
 
-	ProcessType getPreferredType() {
-		if (preferUnitRadio.getSelection())
-			return ProcessType.UNIT_PROCESS;
-		if (preferSystemRadio.getSelection())
-			return ProcessType.LCI_RESULT;
-		return ProcessType.LCI_RESULT;
-	}
-
-	LinkingMethod getLinkingMethod() {
-		if (ignoreProvidersRadio.getSelection())
-			return LinkingMethod.IGNORE_PROVIDERS;
-		if (preferProvidersRadio.getSelection())
-			return LinkingMethod.PREFER_PROVIDERS;
-		if (onlyLinkProvidersRadio.getSelection())
-			return LinkingMethod.ONLY_LINK_PROVIDERS;
-		return LinkingMethod.ONLY_LINK_PROVIDERS;
-	}
-
-	Double getCutoff() {
-		String s = cutoffText.getText();
-		if (Strings.isNullOrEmpty(s)) {
-			return null;
+	LinkingConfig getLinkingConfig() {
+		LinkingConfig config = linkingPanel.getLinkingConfig();
+		if (checkLinksCheck.getSelection()) {
+			config.callback = new ProviderCallback();
 		}
-		try {
-			double cutoff = Double.parseDouble(s);
-			log.trace("Cutoff set to {}", cutoff);
-			return cutoff;
-		} catch (Exception ex) {
-			log.warn("invalid number: cutoff {}", s);
-			return null;
-		}
+		return config;
 	}
 
 }

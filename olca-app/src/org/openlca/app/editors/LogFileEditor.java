@@ -19,8 +19,6 @@ import org.eclipse.ui.forms.widgets.FormToolkit;
 import org.eclipse.ui.forms.widgets.ScrolledForm;
 import org.openlca.app.M;
 import org.openlca.app.logging.HtmlLogFile;
-import org.openlca.app.util.DefaultInput;
-import org.openlca.app.util.Editors;
 import org.openlca.app.util.UI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,7 +29,7 @@ public class LogFileEditor extends FormEditor {
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
 	public static void open() {
-		Editors.open(new DefaultInput(TYPE, UUID.randomUUID().toString(), "Log file"), TYPE);
+		Editors.open(new SimpleEditorInput(TYPE, UUID.randomUUID().toString(), "Log file"), TYPE);
 	}
 
 	@Override

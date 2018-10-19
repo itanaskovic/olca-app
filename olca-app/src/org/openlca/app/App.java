@@ -13,11 +13,11 @@ import org.eclipse.ui.progress.IProgressService;
 import org.openlca.app.cloud.ui.preferences.CloudPreference;
 import org.openlca.app.db.Cache;
 import org.openlca.app.db.Database;
+import org.openlca.app.editors.Editors;
 import org.openlca.app.editors.ModelEditorInput;
 import org.openlca.app.preferencepages.FeatureFlag;
 import org.openlca.app.rcp.RcpActivator;
 import org.openlca.app.rcp.Workspace;
-import org.openlca.app.util.Editors;
 import org.openlca.core.matrix.solvers.BalancedSolver;
 import org.openlca.core.matrix.solvers.DenseSolver;
 import org.openlca.core.matrix.solvers.IMatrixSolver;
@@ -35,13 +35,10 @@ import org.openlca.updates.script.CalculationContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.eventbus.EventBus;
-
 public class App {
 
 	static Logger log = LoggerFactory.getLogger(App.class);
 
-	private static EventBus eventBus = new EventBus();
 	private static IMatrixSolver solver;
 
 	private App() {
@@ -108,10 +105,6 @@ public class App {
 		if (val == null)
 			return false;
 		return val.equals("true");
-	}
-
-	public static EventBus getEventBus() {
-		return eventBus;
 	}
 
 	public static void openEditor(CategorizedEntity model) {
@@ -198,6 +191,22 @@ public class App {
 				monitor.beginTask(name, IProgressMonitor.UNKNOWN);
 				runnable.run();
 				monitor.done();
+			});
+		} catch (InvocationTargetException | InterruptedException e) {
+			log.error("Error while running progress " + name, e);
+		}
+	}
+
+	public static void runWithProgress(String name, Runnable fn,
+			Runnable callback) {
+		IProgressService progress = PlatformUI.getWorkbench()
+				.getProgressService();
+		try {
+			progress.run(true, false, (monitor) -> {
+				monitor.beginTask(name, IProgressMonitor.UNKNOWN);
+				fn.run();
+				monitor.done();
+				callback.run();
 			});
 		} catch (InvocationTargetException | InterruptedException e) {
 			log.error("Error while running progress " + name, e);
