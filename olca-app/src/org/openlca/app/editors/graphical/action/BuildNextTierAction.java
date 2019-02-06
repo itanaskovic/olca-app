@@ -73,7 +73,7 @@ class BuildNextTierAction extends Action implements IBuildAction {
 	private void collectFor(ProcessNode node,
 			List<ProcessDescriptor> providers,
 			List<ConnectionInput> newConnections) {
-		long targetId = node.process.getId();
+		long targetId = node.process.id;
 		List<ExchangeNode> toConnect = getLinkCandidates(node);
 		for (ExchangeNode exchange : toConnect) {
 			ProcessDescriptor provider = findProvider(exchange.exchange);
@@ -81,9 +81,9 @@ class BuildNextTierAction extends Action implements IBuildAction {
 				continue;
 			if (!providers.contains(provider))
 				providers.add(provider);
-			long flowId = exchange.exchange.flow.getId();
-			long exchangeId = exchange.exchange.getId();
-			ConnectionInput connectionInput = new ConnectionInput(provider.getId(), flowId, targetId, exchangeId,
+			long flowId = exchange.exchange.flow.id;
+			long exchangeId = exchange.exchange.id;
+			ConnectionInput connectionInput = new ConnectionInput(provider.id, flowId, targetId, exchangeId,
 					!exchange.exchange.isInput && !exchange.exchange.isAvoided);
 			if (newConnections.contains(connectionInput))
 				continue;
@@ -96,7 +96,7 @@ class BuildNextTierAction extends Action implements IBuildAction {
 		for (ExchangeNode e : node.loadExchangeNodes()) {
 			if (e.exchange == null)
 				continue;
-			if (e.parent().isConnected(e.exchange.getId()))
+			if (e.parent().isConnected(e.exchange.id))
 				continue; // already connected
 			if (e.isWaste() && !e.exchange.isInput)
 				nodes.add(e);
@@ -119,7 +119,7 @@ class BuildNextTierAction extends Action implements IBuildAction {
 		List<ProcessDescriptor> providers = getProviders(exchange);
 		ProcessDescriptor bestMatch = null;
 		for (ProcessDescriptor descriptor : providers) {
-			if (descriptor.getProcessType() == preferredType)
+			if (descriptor.processType == preferredType)
 				return descriptor;
 			if (bestMatch != null)
 				continue;
@@ -131,9 +131,9 @@ class BuildNextTierAction extends Action implements IBuildAction {
 	private List<ProcessDescriptor> getProviders(Exchange exchange) {
 		Set<Long> providerIds = null;
 		if (!exchange.isInput) {
-			providerIds = flowDao.getWhereInput(exchange.flow.getId());
+			providerIds = flowDao.getWhereInput(exchange.flow.id);
 		} else {
-			providerIds = flowDao.getWhereOutput(exchange.flow.getId());
+			providerIds = flowDao.getWhereOutput(exchange.flow.id);
 		}
 		return processDao.getDescriptors(providerIds);
 	}

@@ -14,7 +14,7 @@ ContributionChart = function() {
 			} else {
 				var data = createChartData(scope);
 				var canvas = elem.get(0);
-				var dist = 400 / (2 * scope.report.variants.length);
+				var dist = 400 / (2 * scope.getVariantCount());
 				if (dist < 5)
 					dist = 5;
 				chart = new Chart(canvas.getContext("2d")).StackedBar(data, {
@@ -33,6 +33,9 @@ ContributionChart = function() {
 		var dataSets = initDataSets(scope.report.processes);
 		var indicator = scope.selectedContributionIndicator;
 		$.each(scope.report.variants, function(i, variant) {
+			if (variant.isDisabled) {
+				return;
+			}
 			labels.push(variant.name);
 			var contributions = getContributions(scope, indicator, variant);
 			$.each(contributions, function(i, contribution) {
@@ -50,15 +53,21 @@ ContributionChart = function() {
 	
 	function updateChart(chart, scope) {
 		var indicator = scope.selectedContributionIndicator;
-		$.each(scope.report.variants, function(i, variant) {			
-			var contributions = getContributions(scope, indicator, variant);
-			$.each(contributions, function(j, contribution) {
+		var variants = scope.report.variants;
+		var k = 0;
+		for (var i = 0; i < variants.length; i++) {
+			if (variants[i].isDisabled) {
+				continue;
+			}			
+			var contributions = getContributions(scope, indicator, variants[i]);
+			$.each(contributions, function(_, contribution) {
 				var idx = getIndex(contribution, scope.report.processes);
 				if (idx < 0)
 					return;				
-				chart.datasets[idx].bars[i].value = contribution.amount;
+				chart.datasets[idx].bars[k].value = contribution.amount;
 			});
-		});
+			k++;
+		}
 		chart.update();
 	}
 

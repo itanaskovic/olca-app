@@ -4,10 +4,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.openlca.app.cloud.CloudUtil;
 import org.openlca.app.cloud.index.DiffIndex;
 import org.openlca.app.cloud.ui.diff.DiffResult.DiffResponse;
 import org.openlca.cloud.model.data.Dataset;
+import org.openlca.cloud.util.Datasets;
 import org.openlca.core.database.CategoryDao;
 import org.openlca.core.database.IDatabase;
 import org.openlca.core.model.Category;
@@ -28,12 +28,12 @@ public class DiffNodeBuilder {
 	}
 
 	private void putCategories(List<Category> categories) {
-		for (Category category : categories) {
-			this.categories.put(category.getRefId(), category);
-			putCategories(category.getChildCategories());
+		for (Category c : categories) {
+			this.categories.put(c.refId, c);
+			putCategories(c.childCategories);
 		}
 	}
-	
+
 	public DiffNode build(List<DiffResult> diffs) {
 		if (!init(diffs))
 			return null;
@@ -82,11 +82,11 @@ public class DiffNodeBuilder {
 	}
 
 	private DiffNode createNodeFromCategory(Category category) {
-		DiffNode parent = getOrCreateParentNode(CloudUtil.toDataset(category));
-		DiffResult result = new DiffResult(index.get(category.getRefId()));
+		DiffNode parent = getOrCreateParentNode(Datasets.toDataset(category));
+		DiffResult result = new DiffResult(index.get(category.refId));
 		DiffNode node = new DiffNode(parent, result);
 		parent.children.add(node);
-		nodes.put(category.getRefId(), node);
+		nodes.put(category.refId, node);
 		return node;
 	}
 

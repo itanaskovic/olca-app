@@ -80,7 +80,7 @@ public class ProductSystemFigure extends Figure {
 		double cutoffValue = node.cutoff * 100;
 		String cutoffText = M.Cutoff + ": " + Numbers.format(cutoffValue, 3) + "%";
 		if (selection != null) {
-			graphics.drawText(M.ProductSystem + ": " + node.productSystem.getName(), new Point(5, 5));
+			graphics.drawText(M.ProductSystem + ": " + node.productSystem.name, new Point(5, 5));
 			String label = selectionLabel(selection);
 			graphics.drawText(label, new Point(5, 30));
 			graphics.drawText(cutoffText, new Point(5, 60));
@@ -105,16 +105,16 @@ public class ProductSystemFigure extends Figure {
 	private String selectionLabel(Object selection) {
 		if (selection instanceof FlowDescriptor) {
 			FlowDescriptor flow = (FlowDescriptor) selection;
-			return M.Flow + ": " + flow.getName();
+			return M.Flow + ": " + flow.name;
 		}
 		if (selection instanceof ImpactCategoryDescriptor) {
 			ImpactCategoryDescriptor impact = (ImpactCategoryDescriptor) selection;
-			return M.ImpactCategory + ": " + impact.getName();
+			return M.ImpactCategory + ": " + impact.name;
 		}
 		if (selection instanceof CostResultDescriptor) {
 			CostResultDescriptor cost = (CostResultDescriptor) selection;
 			String m = M.CostResult;
-			return m + ": " + cost.getName();
+			return m + ": " + cost.name;
 		}
 		return M.NoAnalysisOptionsSet;
 	}

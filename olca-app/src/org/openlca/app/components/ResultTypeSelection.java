@@ -15,12 +15,11 @@ import org.openlca.app.viewers.combo.AbstractComboViewer;
 import org.openlca.app.viewers.combo.CostResultViewer;
 import org.openlca.app.viewers.combo.FlowViewer;
 import org.openlca.app.viewers.combo.ImpactCategoryViewer;
-import org.openlca.core.database.EntityCache;
 import org.openlca.core.model.ModelType;
 import org.openlca.core.model.descriptors.FlowDescriptor;
 import org.openlca.core.model.descriptors.ImpactCategoryDescriptor;
-import org.openlca.core.results.IResultProvider;
-import org.openlca.core.results.SimpleResultProvider;
+import org.openlca.core.results.IResult;
+import org.openlca.core.results.SimpleResult;
 
 /**
  * Two combo boxes showing flows and impact categories. The impact categories
@@ -32,7 +31,6 @@ public class ResultTypeSelection {
 
 	private ModelType resultType = ModelType.FLOW;
 
-	private EntityCache cache;
 	private Collection<FlowDescriptor> flows;
 	private Collection<ImpactCategoryDescriptor> impacts;
 	private Collection<CostResultDescriptor> costs;
@@ -43,19 +41,17 @@ public class ResultTypeSelection {
 	private ImpactCategoryViewer impactCombo;
 	private CostResultViewer costCombo;
 
-	public static Dispatch on(IResultProvider result, EntityCache cache) {
-		ResultTypeSelection selection = new ResultTypeSelection(cache);
-		selection.flows = result.getFlowDescriptors();
+	public static Dispatch on(IResult result) {
+		ResultTypeSelection selection = new ResultTypeSelection();
+		selection.flows = result.getFlows();
 		if (result.hasImpactResults())
-			selection.impacts = result.getImpactDescriptors();
-		if (result.hasCostResults() && (result instanceof SimpleResultProvider))
-			selection.costs = CostResults.getDescriptors(
-					(SimpleResultProvider<?>) result);
+			selection.impacts = result.getImpacts();
+		if (result.hasCostResults() && (result instanceof SimpleResult))
+			selection.costs = CostResults.getDescriptors((SimpleResult) result);
 		return new Dispatch(selection);
 	}
 
-	private ResultTypeSelection(EntityCache cache) {
-		this.cache = cache;
+	private ResultTypeSelection() {
 	}
 
 	public void selectWithEvent(Object o) {
@@ -134,7 +130,7 @@ public class ResultTypeSelection {
 		boolean enabled = getType(initialSelection) == ModelType.FLOW;
 		Button check = toolkit.createButton(section, M.Flow, SWT.RADIO);
 		check.setSelection(enabled);
-		flowCombo = new FlowViewer(section, cache);
+		flowCombo = new FlowViewer(section);
 		flowCombo.setEnabled(enabled);
 		FlowDescriptor[] input = flows
 				.toArray(new FlowDescriptor[flows.size()]);

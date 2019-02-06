@@ -56,8 +56,8 @@ class FlowUseSection {
 	void render(Composite body, FormToolkit toolkit) {
 		log.trace("render flow-use-section for flow {}", flow);
 		FlowDao dao = new FlowDao(database);
-		Set<Long> recipients = dao.getWhereInput(flow.getId());
-		Set<Long> providers = dao.getWhereOutput(flow.getId());
+		Set<Long> recipients = dao.getWhereInput(flow.id);
+		Set<Long> providers = dao.getWhereOutput(flow.id);
 		if (recipients.isEmpty() && providers.isEmpty())
 			return;
 		Section section = UI.section(body, toolkit, M.UsedInProcesses);
@@ -114,7 +114,7 @@ class FlowUseSection {
 		link.setForeground(Colors.linkBlue());
 		Controls.onClick(link, e -> {
 			ProcessDao dao = new ProcessDao(database);
-			Process p = dao.getForId(d.getId());
+			Process p = dao.getForId(d.id);
 			App.openEditor(p);
 		});
 	}

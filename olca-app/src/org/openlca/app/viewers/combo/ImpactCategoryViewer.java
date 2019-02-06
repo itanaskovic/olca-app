@@ -6,7 +6,7 @@ import org.eclipse.jface.viewers.BaseLabelProvider;
 import org.eclipse.jface.viewers.IBaseLabelProvider;
 import org.eclipse.jface.viewers.ITableLabelProvider;
 import org.eclipse.jface.viewers.Viewer;
-import org.eclipse.jface.viewers.ViewerSorter;
+import org.eclipse.jface.viewers.ViewerComparator;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.widgets.Composite;
 import org.openlca.app.M;
@@ -34,8 +34,8 @@ public class ImpactCategoryViewer extends
 	}
 
 	@Override
-	protected ViewerSorter getSorter() {
-		return new ImpactCategorySorter();
+	protected ViewerComparator getComparator() {
+		return new ImpactCategoryComparator();
 	}
 
 	@Override
@@ -65,7 +65,7 @@ public class ImpactCategoryViewer extends
 		public Image getColumnImage(Object element, int columnIndex) {
 			switch (columnIndex) {
 			case 0:
-				return Images.get(ModelType.IMPACT_CATEGORY); 
+				return Images.get(ModelType.IMPACT_CATEGORY);
 			}
 			return null;
 		}
@@ -78,14 +78,14 @@ public class ImpactCategoryViewer extends
 			case 0:
 				return Labels.getDisplayName(category);
 			case 1:
-				return category.getReferenceUnit();
+				return category.referenceUnit;
 			}
 			return "";
 		}
 
 	}
 
-	private class ImpactCategorySorter extends ViewerSorter {
+	private class ImpactCategoryComparator extends ViewerComparator {
 
 		@Override
 		public int compare(Viewer viewer, Object e1, Object e2) {
@@ -96,14 +96,12 @@ public class ImpactCategoryViewer extends
 			}
 			if (!(e2 instanceof ImpactCategoryDescriptor) || e2 == null)
 				return 1;
-			ImpactCategoryDescriptor category1 = (ImpactCategoryDescriptor) e1;
-			ImpactCategoryDescriptor category2 = (ImpactCategoryDescriptor) e2;
-			int compare = Strings.compare(category1.getName(),
-					category2.getName());
-			if (compare != 0)
-				return compare;
-			return Strings.compare(category1.getReferenceUnit(),
-					category2.getReferenceUnit());
+			ImpactCategoryDescriptor i1 = (ImpactCategoryDescriptor) e1;
+			ImpactCategoryDescriptor i2 = (ImpactCategoryDescriptor) e2;
+			int c = Strings.compare(i1.name, i2.name);
+			if (c != 0)
+				return c;
+			return Strings.compare(i1.referenceUnit, i2.referenceUnit);
 		}
 
 	}

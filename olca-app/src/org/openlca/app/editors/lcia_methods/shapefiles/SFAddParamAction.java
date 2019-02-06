@@ -63,11 +63,11 @@ class SFAddParamAction extends Action {
 
 	private boolean exists(ShapeFileParameter param) {
 		for (Parameter realParam : section.method().parameters) {
-			if (Strings.nullOrEqual(param.name, realParam.getName())
+			if (Strings.nullOrEqual(param.name, realParam.name)
 					&& Strings.nullOrEqual("SHAPE_FILE",
-							realParam.getSourceType())
+							realParam.sourceType)
 					&& Strings.nullOrEqual(section.shapeFile,
-							realParam.getExternalSource()))
+							realParam.externalSource))
 				return true;
 		}
 		return false;
@@ -75,9 +75,9 @@ class SFAddParamAction extends Action {
 
 	private boolean otherExists(ShapeFileParameter param) {
 		for (Parameter p : section.method().parameters) {
-			if (Strings.nullOrEqual(param.name, p.getName())
+			if (Strings.nullOrEqual(param.name, p.name)
 					&& !Strings.nullOrEqual(section.shapeFile,
-							p.getExternalSource()))
+							p.externalSource))
 				return true;
 		}
 		return false;
@@ -85,16 +85,16 @@ class SFAddParamAction extends Action {
 
 	private void addParam(ShapeFileParameter shapeParam) {
 		Parameter p = new Parameter();
-		p.setRefId(UUID.randomUUID().toString());
-		p.setExternalSource(section.shapeFile);
-		p.setInputParameter(true);
-		p.setName(shapeParam.name);
-		p.setDescription("from shapefile: " + section.shapeFile);
-		p.setValue((shapeParam.min + shapeParam.max) / 2);
-		p.setUncertainty(Uncertainty.uniform(shapeParam.min,
-				shapeParam.max));
-		p.setScope(ParameterScope.IMPACT_METHOD);
-		p.setSourceType("SHAPE_FILE");
+		p.refId = UUID.randomUUID().toString();
+		p.externalSource = section.shapeFile;
+		p.isInputParameter = true;
+		p.name = shapeParam.name;
+		p.description = "from shapefile: " + section.shapeFile;
+		p.value = (shapeParam.min + shapeParam.max) / 2;
+		p.uncertainty = Uncertainty.uniform(
+				shapeParam.min, shapeParam.max);
+		p.scope = ParameterScope.IMPACT_METHOD;
+		p.sourceType = "SHAPE_FILE";
 		section.method().parameters.add(p);
 		ImpactMethodEditor editor = section.page.editor;
 		editor.setDirty(true);

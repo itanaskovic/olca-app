@@ -3,11 +3,11 @@ package org.openlca.app.results;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.eclipse.jface.action.Action;
 import org.eclipse.jface.viewers.ArrayContentProvider;
 import org.eclipse.jface.viewers.ITreeContentProvider;
 import org.eclipse.jface.viewers.TreeViewer;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.events.MouseEvent;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
@@ -37,14 +37,14 @@ import org.openlca.app.util.viewers.Viewers;
 import org.openlca.core.math.CalculationSetup;
 import org.openlca.core.math.data_quality.DQResult;
 import org.openlca.core.model.ModelType;
+import org.openlca.core.model.descriptors.CategorizedDescriptor;
 import org.openlca.core.model.descriptors.FlowDescriptor;
 import org.openlca.core.model.descriptors.ImpactCategoryDescriptor;
-import org.openlca.core.model.descriptors.ProcessDescriptor;
-import org.openlca.core.results.ContributionResultProvider;
+import org.openlca.core.results.ContributionResult;
 
 public class TotalImpactResultPage extends FormPage {
 
-	private final ContributionResultProvider<?> result;
+	private final ContributionResult result;
 	private final DQResult dqResult;
 	private final ImpactFactorProvider impactFactors;
 
@@ -55,7 +55,7 @@ public class TotalImpactResultPage extends FormPage {
 
 	private boolean subgroupByProcesses = true;
 
-	public TotalImpactResultPage(FormEditor editor, ContributionResultProvider<?> result,
+	public TotalImpactResultPage(FormEditor editor, ContributionResult result,
 			DQResult dqResult, CalculationSetup setup, ImpactFactorProvider impactFactors) {
 		super(editor, "ImpactTreePage", M.ImpactAnalysis);
 		this.result = result;
@@ -96,7 +96,7 @@ public class TotalImpactResultPage extends FormPage {
 
 	private void setInput() {
 		List<Item> impacts = new ArrayList<>();
-		for (ImpactCategoryDescriptor impact : result.getImpactDescriptors()) {
+		for (ImpactCategoryDescriptor impact : result.getImpacts()) {
 			impacts.add(new Item(impact));
 		}
 		viewer.setInput(impacts);
@@ -114,8 +114,11 @@ public class TotalImpactResultPage extends FormPage {
 		viewer.setContentProvider(new ContentProvider());
 		toolkit.adapt(viewer.getTree(), false, false);
 		toolkit.paintBordersFor(viewer.getTree());
-		Actions.bind(viewer, TreeClipboard.onCopy(viewer, new ClipboardLabel()));
-		Trees.onDoubleClick(viewer, this::openElement);
+
+		Action onOpen = Actions.onOpen(this::onOpen);
+		Actions.bind(viewer, onOpen,
+				TreeClipboard.onCopy(viewer, new ClipboardLabel()));
+		Trees.onDoubleClick(viewer, e -> onOpen.run());
 		createColumnSorters(labelProvider);
 		double[] widths = { .35, .2, .10, .10, .15, .05 };
 		if (DQUI.displayExchangeQuality(dqResult)) {
@@ -128,7 +131,7 @@ public class TotalImpactResultPage extends FormPage {
 		setInput();
 	}
 
-	private void openElement(MouseEvent e) {
+	private void onOpen() {
 		Item item = Viewers.getFirstSelected(viewer);
 		if (item == null)
 			return;
@@ -295,7 +298,7 @@ public class TotalImpactResultPage extends FormPage {
 			List<Item> children = new ArrayList<>();
 			if (parent.type() == ModelType.IMPACT_CATEGORY && subgroupByProcesses) {
 				double cutoffValue = Math.abs(parent.result() * cutoff);
-				for (ProcessDescriptor process : result.getProcessDescriptors()) {
+				for (CategorizedDescriptor process : result.getProcesses()) {
 					Item child = new Item(parent.impact, process);
 					double result = child.result();
 					if (result == 0)
@@ -306,7 +309,7 @@ public class TotalImpactResultPage extends FormPage {
 				}
 			} else {
 				double cutoffValue = Math.abs(parent.result() * cutoff);
-				for (FlowDescriptor flow : result.getFlowDescriptors()) {
+				for (FlowDescriptor flow : result.getFlows()) {
 					// process will be null in case of subgroupByProcesses=false
 					Item child = new Item(parent.impact, parent.process, flow);
 					double result = child.result();
@@ -345,7 +348,8 @@ public class TotalImpactResultPage extends FormPage {
 
 	public interface ImpactFactorProvider {
 
-		double get(ImpactCategoryDescriptor impact, ProcessDescriptor process,
+		double get(ImpactCategoryDescriptor impact,
+				CategorizedDescriptor process,
 				FlowDescriptor flow);
 
 	}
@@ -353,7 +357,7 @@ public class TotalImpactResultPage extends FormPage {
 	private class Item {
 
 		final ImpactCategoryDescriptor impact;
-		final ProcessDescriptor process;
+		final CategorizedDescriptor process;
 		final FlowDescriptor flow;
 
 		Item(ImpactCategoryDescriptor impact) {
@@ -361,11 +365,11 @@ public class TotalImpactResultPage extends FormPage {
 
 		}
 
-		Item(ImpactCategoryDescriptor impact, ProcessDescriptor process) {
+		Item(ImpactCategoryDescriptor impact, CategorizedDescriptor process) {
 			this(impact, process, null);
 		}
 
-		Item(ImpactCategoryDescriptor impact, ProcessDescriptor process,
+		Item(ImpactCategoryDescriptor impact, CategorizedDescriptor process,
 				FlowDescriptor flow) {
 			this.impact = impact;
 			this.process = process;
@@ -390,10 +394,10 @@ public class TotalImpactResultPage extends FormPage {
 		}
 
 		String impactFactorUnit() {
-			String unit = impact.getReferenceUnit();
+			String unit = impact.referenceUnit;
 			if (unit == null)
 				unit = "1";
-			return unit + "/" + Labels.getRefUnit(flow, result.cache);
+			return unit + "/" + Labels.getRefUnit(flow);
 		}
 
 		String impactFactorString() {
@@ -408,12 +412,12 @@ public class TotalImpactResultPage extends FormPage {
 			if (flow == null)
 				return null;
 			if (process == null)
-				return result.getTotalFlowResult(flow).value;
-			return result.getSingleFlowResult(process, flow).value;
+				return result.getTotalFlowResult(flow);
+			return result.getDirectFlowResult(process, flow);
 		}
 
 		String flowAmountUnit() {
-			return Labels.getRefUnit(flow, result.cache);
+			return Labels.getRefUnit(flow);
 		}
 
 		String flowAmountString() {
@@ -427,9 +431,9 @@ public class TotalImpactResultPage extends FormPage {
 		double result() {
 			switch (type()) {
 			case IMPACT_CATEGORY:
-				return result.getTotalImpactResult(impact).value;
+				return result.getTotalImpactResult(impact);
 			case PROCESS:
-				return result.getSingleImpactResult(process, impact).value;
+				return result.getDirectImpactResult(process, impact);
 			case FLOW:
 				return impactFactor() * flowAmount();
 			default:
@@ -438,17 +442,17 @@ public class TotalImpactResultPage extends FormPage {
 		}
 
 		String unit() {
-			if (impact.getReferenceUnit() == null)
+			if (impact.referenceUnit == null)
 				return null;
-			return impact.getReferenceUnit();
+			return impact.referenceUnit;
 		}
 
 		String name() {
 			switch (type()) {
 			case IMPACT_CATEGORY:
-				return impact.getName();
+				return impact.name;
 			case FLOW:
-				return flow.getName();
+				return flow.name;
 			case PROCESS:
 				return Labels.getDisplayName(process);
 			default:
@@ -459,16 +463,16 @@ public class TotalImpactResultPage extends FormPage {
 		String category() {
 			switch (type()) {
 			case FLOW:
-				return Labels.getShortCategory(flow, result.cache);
+				return Labels.getShortCategory(flow);
 			case PROCESS:
-				return Labels.getShortCategory(process, result.cache);
+				return Labels.getShortCategory(process);
 			default:
 				return null;
 			}
 		}
 
 		double contribution() {
-			double total = Math.abs(result.getTotalImpactResult(impact).value);
+			double total = Math.abs(result.getTotalImpactResult(impact));
 			double r = result();
 			if (r == 0)
 				return 0;

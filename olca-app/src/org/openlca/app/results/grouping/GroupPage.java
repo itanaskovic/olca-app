@@ -11,7 +11,7 @@ import org.eclipse.jface.viewers.ArrayContentProvider;
 import org.eclipse.jface.viewers.LabelProvider;
 import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.Viewer;
-import org.eclipse.jface.viewers.ViewerSorter;
+import org.eclipse.jface.viewers.ViewerComparator;
 import org.eclipse.jface.window.Window;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionEvent;
@@ -45,8 +45,9 @@ import org.openlca.core.math.CalculationSetup;
 import org.openlca.core.model.FlowType;
 import org.openlca.core.model.ProcessGroup;
 import org.openlca.core.model.ProcessGroupSet;
+import org.openlca.core.model.descriptors.CategorizedDescriptor;
 import org.openlca.core.model.descriptors.ProcessDescriptor;
-import org.openlca.core.results.ContributionResultProvider;
+import org.openlca.core.results.ContributionResult;
 import org.openlca.core.results.ProcessGrouping;
 import org.openlca.util.Strings;
 import org.slf4j.Logger;
@@ -59,7 +60,7 @@ public class GroupPage extends FormPage {
 
 	List<ProcessGrouping> groups;
 	ProcessGroupSet groupSet;
-	ContributionResultProvider<?> result;
+	ContributionResult result;
 
 	private TableViewer groupViewer;
 	private TableViewer processViewer;
@@ -68,19 +69,19 @@ public class GroupPage extends FormPage {
 	private Section groupingSection;
 	private CalculationSetup setup;
 
-	public GroupPage(FormEditor editor, ContributionResultProvider<?> result, CalculationSetup setup) {
+	public GroupPage(FormEditor editor, ContributionResult result, CalculationSetup setup) {
 		super(editor, "analysis.GroupPage", M.Grouping);
 		this.result = result;
 		this.setup = setup;
 		initGroups(result);
 	}
 
-	private void initGroups(ContributionResultProvider<?> result) {
+	private void initGroups(ContributionResult result) {
 		groups = new ArrayList<>();
 		ProcessGrouping restGroup = new ProcessGrouping();
 		restGroup.name = M.Other;
 		restGroup.rest = true;
-		for (ProcessDescriptor p : result.getProcessDescriptors())
+		for (CategorizedDescriptor p : result.getProcesses())
 			restGroup.processes.add(p);
 		groups.add(restGroup);
 	}
@@ -89,11 +90,8 @@ public class GroupPage extends FormPage {
 		if (groupSet == null || result == null)
 			return;
 		this.groupSet = groupSet;
-		List<ProcessDescriptor> processes = new ArrayList<>();
-		for (ProcessDescriptor p : result.getProcessDescriptors())
-			processes.add(p);
-		List<ProcessGrouping> newGroups = ProcessGrouping.applyOn(processes,
-				groupSet, M.Other);
+		List<ProcessGrouping> newGroups = ProcessGrouping.applyOn(
+				result.getProcesses(), groupSet, M.Other);
 		groups.clear();
 		groups.addAll(newGroups);
 		updateViewers();
@@ -118,7 +116,7 @@ public class GroupPage extends FormPage {
 		if (groupSet == null)
 			groupingSection.setText(M.Groups);
 		else
-			groupingSection.setText(M.Groups + " (" + groupSet.getName() + ")");
+			groupingSection.setText(M.Groups + " (" + groupSet.name + ")");
 	}
 
 	@Override
@@ -165,7 +163,7 @@ public class GroupPage extends FormPage {
 	private void configureViewer(TableViewer viewer) {
 		viewer.setLabelProvider(new GroupPageLabel());
 		viewer.setContentProvider(new ArrayContentProvider());
-		viewer.setSorter(new GroupPageSorter());
+		viewer.setComparator(new GroupPageComparator());
 	}
 
 	private void createMoveMenu() {
@@ -334,9 +332,9 @@ public class GroupPage extends FormPage {
 	}
 
 	/**
-	 * A viewer sorter for groups and processes on the grouping page.
+	 * A viewer comparator for groups and processes on the grouping page.
 	 */
-	private class GroupPageSorter extends ViewerSorter {
+	private class GroupPageComparator extends ViewerComparator {
 
 		@Override
 		public int compare(Viewer viewer, Object first, Object second) {
@@ -353,7 +351,7 @@ public class GroupPage extends FormPage {
 
 		private int compareProcesses(ProcessDescriptor first,
 				ProcessDescriptor second) {
-			return compareNames(first.getName(), second.getName());
+			return compareNames(first.name, second.name);
 		}
 
 		private int compareGroups(ProcessGrouping first,
@@ -372,7 +370,8 @@ public class GroupPage extends FormPage {
 	}
 
 	/**
-	 * Action for saving a group set in the grouping page of the analysis editor.
+	 * Action for saving a group set in the grouping page of the analysis
+	 * editor.
 	 */
 	private class SaveGroupSetAction extends Action {
 
@@ -416,7 +415,7 @@ public class GroupPage extends FormPage {
 			if (code == Window.CANCEL)
 				return null;
 			ProcessGroupSet set = new ProcessGroupSet();
-			set.setName(dialog.getValue());
+			set.name = dialog.getValue();
 			new ProcessGroupSetDao(Database.get()).insert(set);
 			return set;
 		}
@@ -441,10 +440,10 @@ public class GroupPage extends FormPage {
 				if (pageGroup.rest)
 					continue;
 				ProcessGroup group = new ProcessGroup();
-				group.setName(pageGroup.name);
+				group.name = pageGroup.name;
 				groups.add(group);
-				for (ProcessDescriptor process : pageGroup.processes)
-					group.getProcessIds().add(process.getRefId());
+				for (CategorizedDescriptor p : pageGroup.processes)
+					group.processIds.add(p.refId);
 			}
 			return groups;
 		}

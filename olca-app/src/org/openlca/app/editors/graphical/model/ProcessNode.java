@@ -54,6 +54,7 @@ public class ProcessNode extends Node {
 
 	public void apply(NodeLayoutInfo layout) {
 		minimized = layout.isMinimized();
+		marked = layout.isMarked();
 		if (!minimized)
 			if (getChildren().isEmpty())
 				initializeExchangeNodes();
@@ -154,10 +155,10 @@ public class ProcessNode extends Node {
 
 	private void initializeExchangeNodes() {
 		ProcessDao dao = new ProcessDao(Database.get());
-		Process process = dao.getForId(this.process.getId());
+		Process process = dao.getForId(this.process.id);
 		List<Exchange> list = new ArrayList<>();
-		for (Exchange e : process.getExchanges()) {
-			if (e.flow.getFlowType() == FlowType.ELEMENTARY_FLOW)
+		for (Exchange e : process.exchanges) {
+			if (e.flow.flowType == FlowType.ELEMENTARY_FLOW)
 				continue;
 			list.add(e);
 		}
@@ -175,18 +176,18 @@ public class ProcessNode extends Node {
 	public ExchangeNode getOutput(ProcessLink link) {
 		if (link == null)
 			return null;
-		FlowType type = parent().flowTypes.get(link.flowId);
+		FlowType type = parent().flows.type(link.flowId);
 		if (type == null || type == FlowType.ELEMENTARY_FLOW)
 			return null;
 		for (ExchangeNode n : getExchangeNodes()) {
 			Exchange e = n.exchange;
 			if (e == null || e.isInput ||
-					e.flow == null || e.flow.getId() != link.flowId)
+					e.flow == null || e.flow.id != link.flowId)
 				continue;
 			if (type == FlowType.PRODUCT_FLOW)
 				return n;
 			if (type == FlowType.WASTE_FLOW
-					&& e.getId() == link.exchangeId)
+					&& e.id == link.exchangeId)
 				return n;
 		}
 		return null;
@@ -195,16 +196,16 @@ public class ProcessNode extends Node {
 	public ExchangeNode getInput(ProcessLink link) {
 		if (link == null)
 			return null;
-		FlowType type = parent().flowTypes.get(link.flowId);
+		FlowType type = parent().flows.type(link.flowId);
 		if (type == null || type == FlowType.ELEMENTARY_FLOW)
 			return null;
 		for (ExchangeNode n : getExchangeNodes()) {
 			Exchange e = n.exchange;
 			if (e == null || !e.isInput ||
-					e.flow == null || e.flow.getId() != link.flowId)
+					e.flow == null || e.flow.id != link.flowId)
 				continue;
 			if (type == FlowType.PRODUCT_FLOW
-					&& e.getId() == link.exchangeId)
+					&& e.id == link.exchangeId)
 				return n;
 			if (type == FlowType.WASTE_FLOW)
 				return n;
@@ -244,7 +245,7 @@ public class ProcessNode extends Node {
 	public boolean isConnected(long exchangeId) {
 		MutableProcessLinkSearchMap linkSearch = parent().linkSearch;
 		List<ProcessLink> links = linkSearch.getConnectionLinks(
-				process.getId());
+				process.id);
 		for (ProcessLink link : links) {
 			if (link.exchangeId == exchangeId)
 				return true;
@@ -254,7 +255,7 @@ public class ProcessNode extends Node {
 
 	public int getMinimumHeight() {
 		if (isMinimized())
-			if (process.getProcessType() == ProcessType.LCI_RESULT)
+			if (process.processType == ProcessType.LCI_RESULT)
 				return ProcessFigure.MINIMUM_HEIGHT + 3;
 			else
 				return ProcessFigure.MINIMUM_HEIGHT;
@@ -346,7 +347,7 @@ public class ProcessNode extends Node {
 	@Override
 	public String toString() {
 		String id = process != null
-				? Long.toString(process.getId())
+				? Long.toString(process.id)
 				: "null";
 		return "ProcessNode [ id =" + id + " name = "
 				+ Labels.getDisplayName(process) + " ]";

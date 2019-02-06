@@ -57,7 +57,7 @@ public class ShapeFileUtils {
 	 * method.
 	 */
 	public static File getFolder(ImpactMethod method) {
-		if (method == null || method.getRefId() == null)
+		if (method == null || method.refId == null)
 			return null;
 		return DatabaseDir.getDir(method);
 	}
@@ -67,7 +67,7 @@ public class ShapeFileUtils {
 	 * method.
 	 */
 	public static File getFolder(ImpactMethodDescriptor method) {
-		if (method == null || method.getRefId() == null)
+		if (method == null || method.refId == null)
 			return null;
 		return new FileStore(Database.get()).getFolder(method);
 	}

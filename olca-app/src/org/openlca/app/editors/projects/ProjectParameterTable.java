@@ -75,7 +75,7 @@ class ProjectParameterTable {
 
 	private void updateOnSave(ProjectEditor editor) {
 		Project newProject = editor.getModel();
-		for (ProjectVariant newVar : newProject.getVariants()) {
+		for (ProjectVariant newVar : newProject.variants) {
 			for (Column col : columns) {
 				if (equal(col.variant, newVar)) {
 					col.variant = newVar;
@@ -90,21 +90,21 @@ class ProjectParameterTable {
 			columns = new Column[0];
 			return;
 		}
-		columns = new Column[project.getVariants().size()];
+		columns = new Column[project.variants.size()];
 		for (int i = 0; i < columns.length; i++)
-			columns[i] = new Column(project.getVariants().get(i));
+			columns[i] = new Column(project.variants.get(i));
 		Arrays.sort(columns);
 	}
 
 	private void initParameterRedefs(Project project) {
-		for (ProjectVariant variant : project.getVariants()) {
-			for (ParameterRedef redef : variant.getParameterRedefs()) {
+		for (ProjectVariant variant : project.variants) {
+			for (ParameterRedef redef : variant.parameterRedefs) {
 				if (!contains(redef))
 					redefs.add(redef);
 			}
 		}
 		Collections.sort(redefs,
-				(o1, o2) -> Strings.compare(o1.getName(), o2.getName()));
+				(o1, o2) -> Strings.compare(o1.name, o2.name));
 	}
 
 	/**
@@ -113,9 +113,9 @@ class ProjectParameterTable {
 	 */
 	private boolean contains(ParameterRedef redef) {
 		for (ParameterRedef contained : redefs) {
-			if (Objects.equals(redef.getName(), contained.getName())
-					&& Objects.equals(redef.getContextId(),
-							contained.getContextId()))
+			if (Objects.equals(redef.name, contained.name)
+					&& Objects.equals(redef.contextId,
+							contained.contextId))
 				return true;
 		}
 		return false;
@@ -195,10 +195,10 @@ class ProjectParameterTable {
 	}
 
 	private CategorizedDescriptor getContext(ParameterRedef p) {
-		if (p.getContextId() == null)
+		if (p.contextId == null)
 			return null;
-		return Daos.categorized(Database.get(), p.getContextType())
-				.getDescriptor(p.getContextId());
+		return Daos.categorized(Database.get(), p.contextType)
+				.getDescriptor(p.contextId);
 	}
 
 	private void onAdd() {
@@ -211,7 +211,7 @@ class ProjectParameterTable {
 			reportSync.parameterAdded(redef);
 			for (Column column : columns) {
 				if (findVariantRedef(column.variant, redef) == null)
-					column.variant.getParameterRedefs().add(redef.clone());
+					column.variant.parameterRedefs.add(redef.clone());
 			}
 		}
 		viewer.setInput(this.redefs);
@@ -221,12 +221,12 @@ class ProjectParameterTable {
 	private Set<Long> getParameterContexts() {
 		Project project = editor.getModel();
 		HashSet<Long> contexts = new HashSet<>();
-		if (project.getImpactMethodId() != null)
-			contexts.add(project.getImpactMethodId());
-		for (ProjectVariant variant : project.getVariants()) {
-			if (variant.getProductSystem() == null)
+		if (project.impactMethodId != null)
+			contexts.add(project.impactMethodId);
+		for (ProjectVariant variant : project.variants) {
+			if (variant.productSystem == null)
 				continue;
-			contexts.addAll(variant.getProductSystem().processes);
+			contexts.addAll(variant.productSystem.processes);
 		}
 		return contexts;
 	}
@@ -240,7 +240,7 @@ class ProjectParameterTable {
 				ProjectVariant variant = column.variant;
 				ParameterRedef redef = findVariantRedef(variant, selected);
 				if (redef != null)
-					variant.getParameterRedefs().remove(redef);
+					variant.parameterRedefs.remove(redef);
 			}
 		}
 		viewer.setInput(this.redefs);
@@ -292,10 +292,10 @@ class ProjectParameterTable {
 			ParameterRedef redef) {
 		if (variant == null)
 			return null;
-		for (ParameterRedef variantRedef : variant.getParameterRedefs()) {
-			if (Objects.equals(variantRedef.getName(), redef.getName())
-					&& Objects.equals(variantRedef.getContextId(),
-							redef.getContextId()))
+		for (ParameterRedef variantRedef : variant.parameterRedefs) {
+			if (Objects.equals(variantRedef.name, redef.name)
+					&& Objects.equals(variantRedef.contextId,
+							redef.contextId))
 				return variantRedef;
 		}
 		return null;
@@ -325,10 +325,10 @@ class ProjectParameterTable {
 			return true;
 		if (var1 == null || var2 == null)
 			return false;
-		if (var1.getId() != 0 && var2.getId() != 0)
-			return var1.getId() == var2.getId();
+		if (var1.id != 0 && var2.id != 0)
+			return var1.id == var2.id;
 		else
-			return Objects.equals(var1.getName(), var2.getName());
+			return Objects.equals(var1.name, var2.name);
 	}
 
 	private class LabelProvider extends org.eclipse.jface.viewers.LabelProvider
@@ -360,7 +360,7 @@ class ProjectParameterTable {
 				return null;
 			ParameterRedef redef = (ParameterRedef) element;
 			if (col == 0)
-				return redef.getName();
+				return redef.name;
 			if (col == 1)
 				return getModelColumnText(redef);
 			if (col == 2)
@@ -384,7 +384,7 @@ class ProjectParameterTable {
 			ParameterRedef variantRedef = findVariantRedef(variant, redef);
 			if (variantRedef == null)
 				return null;
-			return Double.toString(variantRedef.getValue());
+			return Double.toString(variantRedef.value);
 		}
 
 		private String getModelColumnText(ParameterRedef redef) {
@@ -396,9 +396,9 @@ class ProjectParameterTable {
 		}
 
 		private BaseDescriptor getModel(ParameterRedef redef) {
-			if (redef == null || redef.getContextId() == null)
+			if (redef == null || redef.contextId == null)
 				return null;
-			long modelId = redef.getContextId();
+			long modelId = redef.contextId;
 			BaseDescriptor model = cache.get(ImpactMethodDescriptor.class,
 					modelId);
 			if (model != null)
@@ -422,7 +422,7 @@ class ProjectParameterTable {
 			ParameterRedef variantRedef = findVariantRedef(variant, redef);
 			if (variantRedef == null)
 				return "";
-			return Double.toString(variantRedef.getValue());
+			return Double.toString(variantRedef.value);
 		}
 
 		@Override
@@ -435,11 +435,11 @@ class ProjectParameterTable {
 			ParameterRedef variantRedef = findVariantRedef(variant, redef);
 			if (variantRedef == null) {
 				variantRedef = redef.clone();
-				variant.getParameterRedefs().add(variantRedef);
+				variant.parameterRedefs.add(variantRedef);
 			}
 			try {
 				double d = Double.parseDouble(text);
-				variantRedef.setValue(d);
+				variantRedef.value = d;
 				reportSync.valueChanged(redef, variant, d);
 				editor.setDirty(true);
 			} catch (Exception e) {
@@ -503,15 +503,15 @@ class ProjectParameterTable {
 		public String getTitle() {
 			if (variant == null)
 				return "";
-			return variant.getName();
+			return variant.name;
 		}
 
 		@Override
 		public int compareTo(Column other) {
 			if (this.variant == null || other.variant == null)
 				return 0;
-			return Strings.compare(this.variant.getName(),
-					other.variant.getName());
+			return Strings.compare(
+					this.variant.name, other.variant.name);
 		}
 	}
 }

@@ -109,12 +109,12 @@ public class AllocationPage extends ModelPage<Process> {
 				AllocationMethod.PHYSICAL, };
 		AllocationMethodViewer viewer = new AllocationMethodViewer(composite,
 				methods);
-		AllocationMethod selected = process().getDefaultAllocationMethod();
+		AllocationMethod selected = process().defaultAllocationMethod;
 		if (selected == null)
 			selected = AllocationMethod.NONE;
 		viewer.select(selected);
-		viewer.addSelectionChangedListener((selection) -> {
-			process().setDefaultAllocationMethod(selection);
+		viewer.addSelectionChangedListener(selection -> {
+			process().defaultAllocationMethod = selection;
 			editor.setDirty(true);
 		});
 	}
@@ -185,7 +185,7 @@ public class AllocationPage extends ModelPage<Process> {
 	private String productText(Exchange exchange) {
 		String text = Labels.getDisplayName(exchange.flow);
 		text += " (" + Numbers.format(exchange.amount, 2) + " "
-				+ exchange.unit.getName() + ")";
+				+ exchange.unit.name + ")";
 		return text;
 	}
 
@@ -196,10 +196,10 @@ public class AllocationPage extends ModelPage<Process> {
 	private AllocationFactor getFactor(Exchange exchange, AllocationMethod method) {
 		if (exchange == null || method == null)
 			return null;
-		for (AllocationFactor factor : process().getAllocationFactors()) {
-			if (factor.getAllocationType() != method)
+		for (AllocationFactor factor : process().allocationFactors) {
+			if (factor.method != method)
 				continue;
-			if (factor.getProductId() != exchange.flow.getId())
+			if (factor.productId != exchange.flow.id)
 				continue;
 			return factor;
 		}
@@ -210,7 +210,7 @@ public class AllocationPage extends ModelPage<Process> {
 		AllocationFactor factor = getFactor(exchange, method);
 		if (factor == null)
 			return Double.toString(1);
-		return Double.toString(factor.getValue());
+		return Double.toString(factor.value);
 	}
 
 	private class FactorLabel extends LabelProvider implements
@@ -284,11 +284,11 @@ public class AllocationPage extends ModelPage<Process> {
 			AllocationFactor factor = getFactor(exchange, method);
 			if (factor == null) {
 				factor = new AllocationFactor();
-				factor.setAllocationType(method);
-				factor.setProductId(exchange.flow.getId());
-				process().getAllocationFactors().add(factor);
+				factor.method = method;
+				factor.productId = exchange.flow.id;
+				process().allocationFactors.add(factor);
 			}
-			factor.setValue(val);
+			factor.value = val;
 			editor.setDirty(true);
 		}
 

@@ -70,10 +70,10 @@ class SFSection {
 
 	private void removeExternalSourceReferences() {
 		for (Parameter parameter : method().parameters) {
-			if (!parameter.isInputParameter())
+			if (!parameter.isInputParameter)
 				continue;
-			if (shapeFile.equals(parameter.getExternalSource())) {
-				parameter.setExternalSource(null);
+			if (shapeFile.equals(parameter.externalSource)) {
+				parameter.externalSource = null;
 			}
 		}
 		page.editor.getParameterSupport().evaluate();
@@ -87,19 +87,19 @@ class SFSection {
 	private void updateExternalSourceReferences(Set<String> stillLinked,
 			Map<String, ShapeFileParameter> nameToParam) {
 		for (Parameter parameter : method().parameters) {
-			if (!parameter.isInputParameter())
+			if (!parameter.isInputParameter)
 				continue;
-			if (!shapeFile.equals(parameter.getExternalSource()))
+			if (!shapeFile.equals(parameter.externalSource))
 				continue;
-			if (!stillLinked.contains(parameter.getName())) {
-				parameter.setExternalSource(null);
+			if (!stillLinked.contains(parameter.name)) {
+				parameter.externalSource = null;
 			} else {
-				ShapeFileParameter param = nameToParam.get(parameter.getName());
+				ShapeFileParameter param = nameToParam.get(parameter.name);
 				if (param == null)
 					continue;
-				parameter.setValue((param.min + param.max) / 2);
-				parameter.setUncertainty(Uncertainty.uniform(
-						param.min, param.max));
+				parameter.value = (param.min + param.max) / 2;
+				parameter.uncertainty = Uncertainty.uniform(
+						param.min, param.max);
 			}
 		}
 		page.editor.getParameterSupport().evaluate();
@@ -108,9 +108,9 @@ class SFSection {
 	private Set<String> getReferencedParameters() {
 		Set<String> names = new HashSet<>();
 		for (Parameter parameter : method().parameters)
-			if (parameter.isInputParameter())
-				if (shapeFile.equals(parameter.getExternalSource()))
-					names.add(parameter.getName());
+			if (parameter.isInputParameter)
+				if (shapeFile.equals(parameter.externalSource))
+					names.add(parameter.name);
 		return names;
 	}
 

@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.eclipse.jface.action.Action;
 import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Image;
@@ -16,7 +17,6 @@ import org.eclipse.ui.forms.widgets.Section;
 import org.openlca.app.App;
 import org.openlca.app.M;
 import org.openlca.app.components.ContributionImage;
-import org.openlca.app.db.Cache;
 import org.openlca.app.db.Database;
 import org.openlca.app.rcp.images.Images;
 import org.openlca.app.util.Actions;
@@ -28,40 +28,41 @@ import org.openlca.app.util.tables.TableClipboard;
 import org.openlca.app.util.tables.Tables;
 import org.openlca.app.util.viewers.Viewers;
 import org.openlca.core.database.CurrencyDao;
-import org.openlca.core.database.EntityCache;
 import org.openlca.core.math.data_quality.DQResult;
-import org.openlca.core.matrix.LongPair;
+import org.openlca.core.matrix.ProcessProduct;
 import org.openlca.core.matrix.TechIndex;
 import org.openlca.core.model.Currency;
 import org.openlca.core.model.FlowType;
 import org.openlca.core.model.ModelType;
+import org.openlca.core.model.descriptors.CategorizedDescriptor;
 import org.openlca.core.model.descriptors.FlowDescriptor;
-import org.openlca.core.model.descriptors.ProcessDescriptor;
-import org.openlca.core.results.ContributionResultProvider;
-import org.openlca.core.results.SimpleResultProvider;
+import org.openlca.core.results.ContributionResult;
+import org.openlca.core.results.SimpleResult;
 
 /**
  * The total requirements section that is shown on the TotalFlowResultPage.
  */
 class TotalRequirementsSection {
 
-	private EntityCache cache = Cache.getEntityCache();
-	private SimpleResultProvider<?> result;
+	private SimpleResult result;
 	private DQResult dqResult;
 	private Costs costs;
 	private String currencySymbol;
-	private Map<Long, ProcessDescriptor> processes = new HashMap<>();
+	private Map<Long, CategorizedDescriptor> processes = new HashMap<>();
 
 	private TableViewer table;
 
-	TotalRequirementsSection(SimpleResultProvider<?> result, DQResult dqResult) {
+	TotalRequirementsSection(SimpleResult result, DQResult dqResult) {
 		this.result = result;
-		for (ProcessDescriptor desc : result.getProcessDescriptors())
-			processes.put(desc.getId(), desc);
-		if (!result.hasCostResults())
+		for (CategorizedDescriptor desc : result.getProcesses())
+			processes.put(desc.id, desc);
+		if (!result.hasCostResults()) {
 			costs = Costs.NONE;
-		else
-			costs = result.getTotalCostResult() >= 0 ? Costs.NET_COSTS : Costs.ADDED_VALUE;
+		} else {
+			costs = result.totalCosts >= 0
+					? Costs.NET_COSTS
+					: Costs.ADDED_VALUE;
+		}
 		this.dqResult = dqResult;
 	}
 
@@ -86,20 +87,22 @@ class TotalRequirementsSection {
 		for (int col : numberColumns()) {
 			table.getTable().getColumns()[col].setAlignment(SWT.RIGHT);
 		}
-		Actions.bind(table, TableClipboard.onCopy(table));
-		Tables.onDoubleClick(table, e -> {
+
+		Action onOpen = Actions.onOpen(() -> {
 			Item item = Viewers.getFirstSelected(table);
 			if (item != null) {
 				App.openEditor(item.process);
 			}
 		});
+		Actions.bind(table, onOpen, TableClipboard.onCopy(table));
+		Tables.onDoubleClick(table, e -> onOpen.run());
 		createCostSum(comp, tk);
 	}
 
 	private void createCostSum(Composite comp, FormToolkit tk) {
 		if (costs == Costs.NONE)
 			return;
-		double v = result.getTotalCostResult();
+		double v = result.totalCosts;
 		String s;
 		String c;
 		if (costs == Costs.NET_COSTS) {
@@ -154,9 +157,9 @@ class TotalRequirementsSection {
 	}
 
 	private List<Item> createItems() {
-		if (result == null || result.result == null)
+		if (result == null)
 			return Collections.emptyList();
-		double[] tr = result.result.totalRequirements;
+		double[] tr = result.totalRequirements;
 		if (tr == null)
 			return Collections.emptyList();
 		List<Item> items = new ArrayList<>();
@@ -187,7 +190,7 @@ class TotalRequirementsSection {
 			try {
 				CurrencyDao dao = new CurrencyDao(Database.get());
 				Currency ref = dao.getReferenceCurrency();
-				currencySymbol = ref.code != null ? ref.code : ref.getName();
+				currencySymbol = ref.code != null ? ref.code : ref.name;
 			} catch (Exception e) {
 				currencySymbol = "?";
 			}
@@ -201,7 +204,7 @@ class TotalRequirementsSection {
 
 	private class Item {
 
-		ProcessDescriptor process;
+		CategorizedDescriptor process;
 		String product;
 		double amount;
 		String unit;
@@ -215,7 +218,7 @@ class TotalRequirementsSection {
 		}
 
 		private void init(int idx) {
-			TechIndex index = result.result.productIndex;
+			TechIndex index = result.techIndex;
 			if (index == null)
 				return;
 			setProcessProduct(index, idx);
@@ -223,28 +226,25 @@ class TotalRequirementsSection {
 		}
 
 		private void setProcessProduct(TechIndex techIdx, int idx) {
-			LongPair lp = techIdx.getProviderAt(idx);
-			if (lp == null)
+			ProcessProduct product = techIdx.getProviderAt(idx);
+			if (product == null)
 				return;
-			ProcessDescriptor process = processes.get(lp.getFirst());
-			if (process != null) {
-				this.process = process;
-			}
-			FlowDescriptor flow = cache.get(FlowDescriptor.class, lp.getSecond());
+			this.process = product.process;
+			FlowDescriptor flow = product.flow;
 			if (flow != null) {
 				this.product = Labels.getDisplayName(flow);
-				this.unit = Labels.getRefUnit(flow, cache);
-				this.flowtype = flow.getFlowType();
+				this.unit = Labels.getRefUnit(flow);
+				this.flowtype = flow.flowType;
 			}
 		}
 
 		private void setCostValue(int idx) {
 			if (costs == Costs.NONE)
 				return;
-			if (!(result instanceof ContributionResultProvider))
+			if (!(result instanceof ContributionResult))
 				return;
-			ContributionResultProvider<?> crp = (ContributionResultProvider<?>) result;
-			double[] vals = crp.result.singleCostResults;
+			ContributionResult crp = (ContributionResult) result;
+			double[] vals = crp.directCostResults;
 			if (vals.length > idx && idx >= 0) {
 				double v = vals[idx];
 				costValue = costs == Costs.NET_COSTS ? v : v != 0 ? -v : 0;

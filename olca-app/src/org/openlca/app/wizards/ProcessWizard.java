@@ -123,7 +123,7 @@ public class ProcessWizard extends AbstractWizard<Process> {
 				INavigationElement<?> e = Navigator.findElement(d);
 				ISelection s = new StructuredSelection(e);
 				flowTree.setSelection(s, true);
-				String name = refFlow.getName() != null ? refFlow.getName() : "";
+				String name = refFlow.name != null ? refFlow.name : "";
 				nameText.setText(name);
 				checkInput();
 			}
@@ -230,7 +230,7 @@ public class ProcessWizard extends AbstractWizard<Process> {
 				return null;
 			FlowDescriptor flow = (FlowDescriptor) e.getContent();
 			IDatabase db = Database.get();
-			return new FlowDao(db).getForId(flow.getId());
+			return new FlowDao(db).getForId(flow.id);
 		}
 	}
 

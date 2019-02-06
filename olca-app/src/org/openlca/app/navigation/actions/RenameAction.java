@@ -6,7 +6,6 @@ import org.eclipse.jface.action.Action;
 import org.eclipse.jface.dialogs.InputDialog;
 import org.eclipse.jface.window.Window;
 import org.openlca.app.M;
-import org.openlca.app.cloud.CloudUtil;
 import org.openlca.app.db.Database;
 import org.openlca.app.navigation.CategoryElement;
 import org.openlca.app.navigation.INavigationElement;
@@ -15,6 +14,7 @@ import org.openlca.app.navigation.Navigator;
 import org.openlca.app.rcp.images.Icon;
 import org.openlca.app.util.Error;
 import org.openlca.app.util.UI;
+import org.openlca.cloud.util.Datasets;
 import org.openlca.core.database.CategorizedEntityDao;
 import org.openlca.core.database.CategoryDao;
 import org.openlca.core.database.Daos;
@@ -55,9 +55,9 @@ class RenameAction extends Action implements INavigationAction {
 	public void run() {
 		String name = null;
 		if (element instanceof CategoryElement) {
-			name = ((CategoryElement) element).getContent().getName();
+			name = ((CategoryElement) element).getContent().name;
 		} else {
-			name = ((ModelElement) element).getContent().getName();
+			name = ((ModelElement) element).getContent().name;
 		}
 		InputDialog dialog = new InputDialog(UI.shell(), M.Rename,
 				M.PleaseEnterANewName, name, null);
@@ -83,9 +83,9 @@ class RenameAction extends Action implements INavigationAction {
 			// 3) delete the old category
 			// the new category is added in the dao already
 			if (Database.getIndexUpdater() != null) {
-				Database.getIndexUpdater().delete(CloudUtil.toDataset(category));
+				Database.getIndexUpdater().delete(Datasets.toDataset(category));
 			}
-			category.setName(newName.trim());
+			category.name = newName.trim();
 			new CategoryDao(Database.get()).update(category);
 			Navigator.refresh(element);
 		} catch (final Exception e) {
@@ -93,12 +93,12 @@ class RenameAction extends Action implements INavigationAction {
 		}
 	}
 
-	private <T extends CategorizedEntity> void doUpdate(CategorizedDescriptor descriptor, String newName) {
+	private <T extends CategorizedEntity> void doUpdate(CategorizedDescriptor d, String newName) {
 		@SuppressWarnings("unchecked")
 		CategorizedEntityDao<T, ?> dao = (CategorizedEntityDao<T, ?>) Daos.categorized(Database.get(),
-				descriptor.getModelType());
-		T entity = dao.getForId(descriptor.getId());
-		entity.setName(newName.trim());
+				d.type);
+		T entity = dao.getForId(d.id);
+		entity.name = newName.trim();
 		entity = dao.update(entity);
 		Navigator.refresh(element.getParent());
 	}

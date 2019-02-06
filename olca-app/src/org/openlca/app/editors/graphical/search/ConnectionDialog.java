@@ -67,14 +67,14 @@ public class ConnectionDialog extends Dialog {
 		setShellStyle(SWT.BORDER | SWT.TITLE);
 		setBlockOnOpen(true);
 		exchange = exchangeNode.exchange;
-		processId = exchangeNode.parent().process.getId();
+		processId = exchangeNode.parent().process.id;
 		ProductSystemNode systemNode = exchangeNode.parent().parent();
 		existingProcesses = systemNode.getProductSystem().processes;
 		linkSearch = systemNode.linkSearch;
 		selectProvider = exchangeNode.exchange.isInput;
 		boolean foundLink = false;
 		for (ProcessLink link : linkSearch.getConnectionLinks(processId))
-			if (link.flowId == exchange.flow.getId())
+			if (link.flowId == exchange.flow.id)
 				foundLink = true;
 		isConnected = foundLink;
 	}
@@ -123,7 +123,7 @@ public class ConnectionDialog extends Dialog {
 
 	private void createInternalModel() {
 		availableConnections.clear();
-		long flowId = exchange.flow.getId();
+		long flowId = exchange.flow.id;
 		String query = "SELECT id, f_owner FROM tbl_exchanges "
 				+ "WHERE f_flow = " + flowId + " AND is_input = " + (selectProvider ? 0 : 1);
 		List<Pair<Long, Long>> exchanges = new ArrayList<>();
@@ -142,12 +142,12 @@ public class ConnectionDialog extends Dialog {
 		List<ProcessDescriptor> processes = new ProcessDao(Database.get()).getDescriptors(processIds);
 		Map<Long, ProcessDescriptor> idToProcess = new HashMap<>();
 		for (ProcessDescriptor process : processes)
-			idToProcess.put(process.getId(), process);
+			idToProcess.put(process.id, process);
 		for (Pair<Long, Long> exchange : exchanges) {
 			ProcessDescriptor process = idToProcess.get(exchange.getRight());
-			boolean existing = existingProcesses.contains(process.getId());
+			boolean existing = existingProcesses.contains(process.id);
 			boolean connected = false;
-			boolean defaultProvider = this.exchange.defaultProviderId == process.getId();
+			boolean defaultProvider = this.exchange.defaultProviderId == process.id;
 			if (existing)
 				connected = isAlreadyConnected(process);
 			availableConnections.add(new AvailableConnection(process, exchange.getLeft(), existing, connected,
@@ -163,10 +163,10 @@ public class ConnectionDialog extends Dialog {
 	}
 
 	private boolean isAlreadyProvider(ProcessDescriptor process) {
-		for (ProcessLink link : linkSearch.getProviderLinks(process.getId())) {
+		for (ProcessLink link : linkSearch.getProviderLinks(process.id)) {
 			if (link.processId != processId)
 				continue;
-			if (link.flowId != exchange.flow.getId())
+			if (link.flowId != exchange.flow.id)
 				continue;
 			return true;
 		}
@@ -174,10 +174,10 @@ public class ConnectionDialog extends Dialog {
 	}
 
 	private boolean isAlreadyReceiver(ProcessDescriptor process) {
-		for (ProcessLink link : linkSearch.getConnectionLinks(process.getId())) {
+		for (ProcessLink link : linkSearch.getConnectionLinks(process.id)) {
 			if (link.providerId != processId)
 				continue;
-			if (link.exchangeId != exchange.getId())
+			if (link.exchangeId != exchange.id)
 				continue;
 			return true;
 		}
@@ -202,8 +202,8 @@ public class ConnectionDialog extends Dialog {
 	}
 
 	private boolean hasProvider(AvailableConnection process) {
-		for (ProcessLink link : linkSearch.getConnectionLinks(process.process.getId()))
-			if (link.exchangeId == exchange.getId())
+		for (ProcessLink link : linkSearch.getConnectionLinks(process.process.id))
+			if (link.exchangeId == exchange.id)
 				return true;
 		return false;
 	}

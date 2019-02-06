@@ -42,66 +42,67 @@ public class Labels {
 	}
 
 	public static String getDisplayName(RootEntity entity) {
-		if (entity == null || entity.getName() == null)
+		if (entity == null || entity.name == null)
 			return "";
 		Location loc = null;
 		if (entity instanceof Flow) {
 			Flow flow = (Flow) entity;
-			loc = flow.getLocation();
+			loc = flow.location;
 		}
 		if (entity instanceof Process) {
 			Process process = (Process) entity;
-			loc = process.getLocation();
+			loc = process.location;
 		}
-		if (loc == null || Strings.isNullOrEmpty(loc.getCode()))
-			return entity.getName();
-		return entity.getName() + " - " + loc.getCode();
+		if (loc == null || Strings.isNullOrEmpty(loc.code))
+			return entity.name;
+		return entity.name + " - " + loc.code;
 	}
 
-	public static String getDisplayName(BaseDescriptor descriptor) {
-		if (descriptor == null)
+	public static String getDisplayName(BaseDescriptor d) {
+		if (d == null)
 			return "";
 		EntityCache cache = Cache.getEntityCache();
-		String text = descriptor.getName();
+		String text = d.name;
 		if (cache == null)
 			return text;
 		Long locationId = null;
-		if (descriptor instanceof ProcessDescriptor) {
-			ProcessDescriptor process = (ProcessDescriptor) descriptor;
-			locationId = process.getLocation();
+		if (d instanceof ProcessDescriptor) {
+			ProcessDescriptor process = (ProcessDescriptor) d;
+			locationId = process.location;
 		}
-		if (descriptor instanceof FlowDescriptor) {
-			FlowDescriptor flow = (FlowDescriptor) descriptor;
-			locationId = flow.getLocation();
+		if (d instanceof FlowDescriptor) {
+			FlowDescriptor flow = (FlowDescriptor) d;
+			locationId = flow.location;
 		}
 		if (locationId != null) {
 			Location loc = cache.get(Location.class, locationId);
-			if (loc != null && !Strings.isNullOrEmpty(loc.getCode()))
-				text = text + " - " + loc.getCode();
+			if (loc != null && !Strings.isNullOrEmpty(loc.code))
+				text = text + " - " + loc.code;
 		}
 		return text;
 	}
 
-	public static String getDisplayInfoText(BaseDescriptor descriptor) {
-		if (descriptor == null)
+	public static String getDisplayInfoText(BaseDescriptor d) {
+		if (d == null)
 			return "";
-		return descriptor.getDescription();
+		return d.description;
 	}
 
-	public static String getRefUnit(FlowDescriptor flow, EntityCache cache) {
+	public static String getRefUnit(FlowDescriptor flow) {
 		if (flow == null)
 			return "";
-		FlowProperty refProp = cache.get(FlowProperty.class,
-				flow.getRefFlowPropertyId());
+		FlowProperty refProp = Cache.getEntityCache().get(
+				FlowProperty.class,
+				flow.refFlowPropertyId);
 		if (refProp == null)
 			return "";
-		UnitGroup unitGroup = refProp.getUnitGroup();
+		UnitGroup unitGroup = refProp.unitGroup;
 		if (unitGroup == null)
 			return "";
-		Unit unit = unitGroup.getReferenceUnit();
+		Unit unit = unitGroup.referenceUnit;
 		if (unit == null)
 			return "";
-		return unit.getName();
+		return unit.name;
 	}
 
 	/**
@@ -110,26 +111,25 @@ public class Labels {
 	 * category and the right value is the sub-category. Default values are
 	 * empty strings.
 	 */
-	public static Pair<String, String> getCategory(CategorizedDescriptor entity,
-			EntityCache cache) {
-		if (entity == null || entity.getCategory() == null)
+	public static Pair<String, String> getCategory(CategorizedDescriptor entity) {
+		EntityCache cache = Cache.getEntityCache();
+		if (entity == null || entity.category == null)
 			return Pair.of("", "");
-		Category cat = cache.get(Category.class, entity.getCategory());
+		Category cat = cache.get(Category.class, entity.category);
 		if (cat == null)
 			return Pair.of("", "");
-		if (cat.getCategory() == null)
-			return Pair.of(cat.getName(), "");
+		if (cat.category == null)
+			return Pair.of(cat.name, "");
 		else
-			return Pair.of(cat.getCategory().getName(), cat.getName());
+			return Pair.of(cat.category.name, cat.name);
 	}
 
 	/**
 	 * Same as {@link #getCategory(CategorizedDescriptor, EntityCache)} but top-
 	 * and sub-category concatenated as a short string.
 	 */
-	public static String getShortCategory(CategorizedDescriptor entity,
-			EntityCache cache) {
-		Pair<String, String> p = getCategory(entity, cache);
+	public static String getShortCategory(CategorizedDescriptor entity) {
+		Pair<String, String> p = getCategory(entity);
 		if (Strings.isNullOrEmpty(p.getLeft()) && Strings.isNullOrEmpty(p.getRight()))
 			return "";
 		if (Strings.isNullOrEmpty(p.getLeft()))
@@ -187,7 +187,7 @@ public class Labels {
 	public static String flowType(Flow flow) {
 		if (flow == null)
 			return null;
-		return flowType(flow.getFlowType());
+		return flowType(flow.flowType);
 	}
 
 	public static String flowType(FlowType type) {
@@ -208,7 +208,7 @@ public class Labels {
 	public static String processType(Process process) {
 		if (process == null)
 			return null;
-		return processType(process.getProcessType());
+		return processType(process.processType);
 	}
 
 	public static String processType(ProcessType processType) {
@@ -246,7 +246,7 @@ public class Labels {
 	public static String flowPropertyType(FlowProperty property) {
 		if (property == null)
 			return null;
-		return flowPropertyType(property.getFlowPropertyType());
+		return flowPropertyType(property.flowPropertyType);
 	}
 
 	public static String flowPropertyType(FlowPropertyType type) {

@@ -33,7 +33,7 @@ class ProviderCombo extends ComboBoxCellModifier<Exchange, ProcessDescriptor> {
 	public boolean canModify(Exchange e) {
 		if (e == null || e.flow == null)
 			return false;
-		FlowType type = e.flow.getFlowType();
+		FlowType type = e.flow.flowType;
 		if (e.isInput)
 			return type == FlowType.PRODUCT_FLOW;
 		else
@@ -73,7 +73,7 @@ class ProviderCombo extends ComboBoxCellModifier<Exchange, ProcessDescriptor> {
 		if (d == null)
 			e.defaultProviderId = 0;
 		else
-			e.defaultProviderId = d.getId();
+			e.defaultProviderId = d.id;
 		editor.setDirty(true);
 	}
 
@@ -83,8 +83,8 @@ class ProviderCombo extends ComboBoxCellModifier<Exchange, ProcessDescriptor> {
 			return ids;
 		FlowDao dao = new FlowDao(db);
 		if (e.isInput)
-			return dao.getWhereOutput(e.flow.getId());
+			return dao.getWhereOutput(e.flow.id);
 		else
-			return dao.getWhereInput(e.flow.getId());
+			return dao.getWhereInput(e.flow.id);
 	}
 }

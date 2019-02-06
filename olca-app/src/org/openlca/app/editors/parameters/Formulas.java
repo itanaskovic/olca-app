@@ -65,9 +65,9 @@ public class Formulas {
 
 	private List<String> eval(Process p) {
 		try {
-			Scope s = makeLocalScope(p.getParameters(), p.getId());
-			evalParams(p.getParameters(), s);
-			evalExchanges(p.getExchanges(), s);
+			Scope s = makeLocalScope(p.parameters, p.id);
+			evalParams(p.parameters, s);
+			evalExchanges(p.exchanges, s);
 		} catch (Exception e) {
 			log.warn("unexpected error in formula evaluation", e);
 		}
@@ -76,7 +76,7 @@ public class Formulas {
 
 	private List<String> eval(ImpactMethod m) {
 		try {
-			Scope s = makeLocalScope(m.parameters, m.getId());
+			Scope s = makeLocalScope(m.parameters, m.id);
 			evalParams(m.parameters, s);
 			for (ImpactCategory ic : m.impactCategories)
 				evalFactors(ic.impactFactors, s);
@@ -88,10 +88,10 @@ public class Formulas {
 
 	private void evalParams(List<Parameter> params, Scope s) {
 		for (Parameter param : params) {
-			if (param.isInputParameter())
+			if (param.isInputParameter)
 				continue;
-			double val = eval(param.getFormula(), s);
-			param.setValue(val);
+			double val = eval(param.formula, s);
+			param.value = val;
 		}
 	}
 
@@ -153,10 +153,10 @@ public class Formulas {
 	private void bind(Parameter param, Scope scope) {
 		if (param == null || scope == null)
 			return;
-		if (param.isInputParameter())
-			scope.bind(param.getName(), Double.toString(param.getValue()));
+		if (param.isInputParameter)
+			scope.bind(param.name, Double.toString(param.value));
 		else
-			scope.bind(param.getName(), param.getFormula());
+			scope.bind(param.name, param.formula);
 	}
 
 }

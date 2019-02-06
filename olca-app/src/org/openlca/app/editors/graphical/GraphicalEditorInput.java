@@ -32,7 +32,7 @@ public final class GraphicalEditorInput implements IEditorInput {
 	}
 
 	@Override
-	@SuppressWarnings("rawtypes")
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public Object getAdapter(final Class adapter) {
 		return null;
 	}
@@ -64,7 +64,7 @@ public final class GraphicalEditorInput implements IEditorInput {
 	public String getToolTipText() {
 		if (descriptor == null)
 			return "no content";
-		return descriptor.getName();
+		return descriptor.name;
 	}
 
 }

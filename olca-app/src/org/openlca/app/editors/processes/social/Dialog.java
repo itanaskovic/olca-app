@@ -47,7 +47,7 @@ class Dialog extends FormDialog {
 	@Override
 	protected void createFormContent(IManagedForm mform) {
 		FormToolkit tk = mform.getToolkit();
-		String title = aspect.indicator.getName();
+		String title = aspect.indicator.name;
 		if (title == null)
 			title = M.SocialAspect;
 		UI.formHeader(mform, title);
@@ -90,7 +90,7 @@ class Dialog extends FormDialog {
 		});
 		String unit = "";
 		if (aspect.indicator.activityUnit != null)
-			unit = aspect.indicator.activityUnit.getName();
+			unit = aspect.indicator.activityUnit.name;
 		UI.formLabel(body, tk, unit);
 	}
 
@@ -107,7 +107,7 @@ class Dialog extends FormDialog {
 				aspect.source = null;
 			} else {
 				SourceDao dao = new SourceDao(Database.get());
-				aspect.source = dao.getForId(d.getId());
+				aspect.source = dao.getForId(d.id);
 			}
 		});
 		UI.filler(body, tk);

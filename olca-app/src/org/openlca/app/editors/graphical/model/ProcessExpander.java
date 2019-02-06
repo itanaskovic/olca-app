@@ -36,9 +36,9 @@ class ProcessExpander extends ImageFigure {
 	boolean shouldBeVisible() {
 		ProductSystemNode sysNode = node.parent();
 		MutableProcessLinkSearchMap linkSearch = sysNode.linkSearch;
-		long processId = node.process.getId();
+		long processId = node.process.id;
 		for (ProcessLink link : linkSearch.getLinks(processId)) {
-			FlowType type = sysNode.flowTypes.get(link.flowId);
+			FlowType type = sysNode.flows.type(link.flowId);
 			boolean isProvider = link.providerId == processId;
 			if (side == Side.INPUT) {
 				if (type == FlowType.PRODUCT_FLOW && !isProvider)
@@ -75,11 +75,11 @@ class ProcessExpander extends ImageFigure {
 
 	private void createNecessaryNodes() {
 		ProductSystemNode sysNode = node.parent();
-		long processID = node.process.getId();
+		long processID = node.process.id;
 		List<ProcessLink> links = sysNode.linkSearch.getLinks(processID);
 		Map<Long, ProcessDescriptor> map = processMap(links);
 		for (ProcessLink pLink : links) {
-			FlowType type = sysNode.flowTypes.get(pLink.flowId);
+			FlowType type = sysNode.flows.type(pLink.flowId);
 			if (type == null || type == FlowType.ELEMENTARY_FLOW)
 				continue;
 			boolean isProvider = processID == pLink.providerId;

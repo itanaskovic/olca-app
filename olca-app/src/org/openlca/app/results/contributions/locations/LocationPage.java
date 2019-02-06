@@ -15,14 +15,12 @@ import org.eclipse.ui.forms.widgets.ScrolledForm;
 import org.eclipse.ui.forms.widgets.Section;
 import org.openlca.app.M;
 import org.openlca.app.components.ResultTypeSelection;
-import org.openlca.app.db.Cache;
 import org.openlca.app.rcp.images.Images;
 import org.openlca.app.util.Controls;
 import org.openlca.app.util.Labels;
 import org.openlca.app.util.UI;
-import org.openlca.core.database.EntityCache;
 import org.openlca.core.math.CalculationSetup;
-import org.openlca.core.results.ContributionResultProvider;
+import org.openlca.core.results.ContributionResult;
 
 /**
  * Shows the contributions of the locations in the product system to an analysis
@@ -30,8 +28,7 @@ import org.openlca.core.results.ContributionResultProvider;
  */
 public class LocationPage extends FormPage {
 
-	private EntityCache cache = Cache.getEntityCache();
-	ContributionResultProvider<?> result;
+	ContributionResult result;
 
 	private ResultTypeSelection combos;
 	private LocationTree tree;
@@ -41,11 +38,11 @@ public class LocationPage extends FormPage {
 	double cutoff = 0.01;
 	private CalculationSetup setup;
 
-	public LocationPage(FormEditor editor, ContributionResultProvider<?> result, CalculationSetup setup) {
+	public LocationPage(FormEditor editor, ContributionResult result, CalculationSetup setup) {
 		this(editor, result, setup, true);
 	}
 
-	public LocationPage(FormEditor editor, ContributionResultProvider<?> result, CalculationSetup setup,
+	public LocationPage(FormEditor editor, ContributionResult result, CalculationSetup setup,
 			boolean showMap) {
 		super(editor, "analysis.MapPage", M.Locations);
 		this.setup = setup;
@@ -75,9 +72,9 @@ public class LocationPage extends FormPage {
 		UI.gridLayout(outer, 2, 5, 0);
 		Composite comboComp = tk.createComposite(outer);
 		UI.gridLayout(comboComp, 2);
-		combos = ResultTypeSelection.on(result, cache)
+		combos = ResultTypeSelection.on(result)
 				.withEventHandler(new SelectionHandler(this))
-				.withSelection(result.getFlowDescriptors().iterator().next())
+				.withSelection(result.getFlows().iterator().next())
 				.create(comboComp, tk);
 
 		Composite cutoffComp = tk.createComposite(outer);

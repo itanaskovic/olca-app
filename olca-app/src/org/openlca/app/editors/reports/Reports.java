@@ -34,12 +34,12 @@ public final class Reports {
 	private Reports() {
 	}
 
-	public static Report createOrOpen(Project project, IDatabase database) {
-		Report report = openReport(project, database);
-		return report != null ? report : createNew(project, database);
+	public static Report createOrOpen(Project project, IDatabase db) {
+		Report report = openReport(project, db);
+		return report != null ? report : createNew(project, db);
 	}
 
-	private static Report createNew(Project project, IDatabase database) {
+	private static Report createNew(Project project, IDatabase db) {
 		Report report = new Report();
 		createDefaultSections(report);
 		if (project == null) {
@@ -47,8 +47,8 @@ public final class Reports {
 			return report;
 		}
 		createReportVariants(project, report);
-		createReportIndicators(project, report, database);
-		report.title = M.ResultsOfProject + " " + project.getName();
+		createReportIndicators(project, report, db);
+		report.title = M.ResultsOfProject + " " + project.name;
 		return report;
 	}
 
@@ -56,13 +56,13 @@ public final class Reports {
 		if (project == null || report == null)
 			return;
 		int id = 0;
-		for (ProjectVariant projectVar : project.getVariants()) {
+		for (ProjectVariant projectVar : project.variants) {
 			ReportVariant reportVar = new ReportVariant(id++);
-			reportVar.name = projectVar.getName();
+			reportVar.name = projectVar.name;
 			report.variants.add(reportVar);
-			for (ParameterRedef redef : projectVar.getParameterRedefs()) {
+			for (ParameterRedef redef : projectVar.parameterRedefs) {
 				ReportParameter param = findOrCreateParameter(redef, report);
-				param.putValue(reportVar.id, redef.getValue());
+				param.putValue(reportVar.id, redef.value);
 			}
 		}
 	}
@@ -73,45 +73,45 @@ public final class Reports {
 			ParameterRedef reportRedef = parameter.redef;
 			if (reportRedef == null)
 				continue;
-			if (Objects.equals(redef.getName(), reportRedef.getName())
-					&& Objects.equals(redef.getContextId(),
-							reportRedef.getContextId()))
+			if (Objects.equals(redef.name, reportRedef.name)
+					&& Objects.equals(redef.contextId,
+							reportRedef.contextId))
 				return parameter;
 		}
 		ReportParameter parameter = new ReportParameter();
 		report.parameters.add(parameter);
-		parameter.name = redef.getName();
+		parameter.name = redef.name;
 		parameter.redef = redef;
 		return parameter;
 	}
 
 	private static void createReportIndicators(Project project, Report report,
 			IDatabase database) {
-		if (project.getImpactMethodId() == null)
+		if (project.impactMethodId == null)
 			return;
 		ImpactMethodDao dao = new ImpactMethodDao(database);
 		List<ImpactCategoryDescriptor> descriptors = dao
-				.getCategoryDescriptors(project.getImpactMethodId());
+				.getCategoryDescriptors(project.impactMethodId);
 		int id = 0;
-		for (ImpactCategoryDescriptor descriptor : descriptors) {
-			ReportIndicator indicator = new ReportIndicator(id++);
-			report.indicators.add(indicator);
-			indicator.descriptor = descriptor;
-			indicator.reportName = descriptor.getName();
-			indicator.displayed = true;
+		for (ImpactCategoryDescriptor d : descriptors) {
+			ReportIndicator i = new ReportIndicator(id++);
+			i.descriptor = d;
+			i.reportName = d.name;
+			i.displayed = true;
+			report.indicators.add(i);
 		}
 	}
 
-	private static Report openReport(Project project, IDatabase database) {
+	private static Report openReport(Project project, IDatabase db) {
 		if (project == null)
 			return null;
-		File file = getReportFile(project, database);
+		File file = getReportFile(project, db);
 		if (file == null || !file.exists())
 			return null;
 		try (FileInputStream fis = new FileInputStream(file);
 				Reader reader = new InputStreamReader(fis, "utf-8")) {
-			Gson gson = new Gson();
-			return gson.fromJson(reader, Report.class);
+			Report r = new Gson().fromJson(reader, Report.class);
+			return r;
 		} catch (Exception e) {
 			Logger log = LoggerFactory.getLogger(Reports.class);
 			log.error("failed to open report file " + file, e);

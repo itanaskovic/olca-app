@@ -70,19 +70,19 @@ class EvaluateLocationsJob implements IRunnableWithProgress {
 	}
 
 	private void evaluate(LocationDescriptor location) {
-		subTask(location.getName());
+		subTask(location.name);
 		for (String shapeFile : ShapeFileUtils.getShapeFiles(method))
-			parameterCache.remove(location.getId(), shapeFile);
+			parameterCache.remove(location.id, shapeFile);
 		KmlFeature feature = getKmlFeature(location);
 		if (feature != null)
-			parameterCalculator.calculate(location.getId(), feature);
+			parameterCalculator.calculate(location.id, feature);
 		worked();
 	}
 
 	private List<Parameter> getShapeFileParameters() {
 		if (method == null)
 			return Collections.emptyList();
-		long methodId = method.getId();
+		long methodId = method.id;
 		String query = "select m.parameters from ImpactMethod m where " + "m.id = :methodId";
 		ParameterDao dao = new ParameterDao(Database.get());
 		List<Parameter> allParams = dao.getAll(query, Collections.singletonMap("methodId", methodId));
@@ -90,9 +90,9 @@ class EvaluateLocationsJob implements IRunnableWithProgress {
 		for (Parameter param : allParams) {
 			if (param == null)
 				continue;
-			if (param.getExternalSource() == null)
+			if (param.externalSource == null)
 				continue;
-			if (!"SHAPE_FILE".equals(param.getSourceType()))
+			if (!"SHAPE_FILE".equals(param.sourceType))
 				continue;
 			shapeFileParams.add(param);
 		}
@@ -100,7 +100,7 @@ class EvaluateLocationsJob implements IRunnableWithProgress {
 	}
 
 	private KmlFeature getKmlFeature(LocationDescriptor location) {
-		byte[] kmz = locationDao.getForId(location.getId()).getKmz();
+		byte[] kmz = locationDao.getForId(location.id).kmz;
 		if (kmz == null)
 			return null;
 		String kml = KmlUtil.toKml(kmz);
@@ -110,7 +110,7 @@ class EvaluateLocationsJob implements IRunnableWithProgress {
 			KmlFeature feature = KmlFeature.parse(kml);
 			return feature;
 		} catch (Exception e) {
-			log.warn("Could not parse kml data for location " + location.getName());
+			log.warn("Could not parse kml data for location " + location.name);
 		}
 		return null;
 	}

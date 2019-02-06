@@ -130,10 +130,10 @@ public class ParameterSection {
 	private void addSorters(TableViewer table, ParameterLabelProvider label) {
 		if (forInputParameters) {
 			Viewers.sortByLabels(table, label, 0, 2, 3);
-			Viewers.sortByDouble(table, (Parameter p) -> p.getValue(), 1);
+			Viewers.sortByDouble(table, (Parameter p) -> p.value, 1);
 		} else {
 			Viewers.sortByLabels(table, label, 0, 1, 3);
-			Viewers.sortByDouble(table, (Parameter p) -> p.getValue(), 2);
+			Viewers.sortByDouble(table, (Parameter p) -> p.value, 2);
 		}
 	}
 
@@ -146,7 +146,7 @@ public class ParameterSection {
 				Icon.LINK.descriptor(), () -> {
 					Parameter p = Viewers.getFirstSelected(viewer);
 					if (p != null) {
-						ParameterUsagePage.show(p.getName());
+						ParameterUsagePage.show(p.name);
 					}
 				});
 		CommentAction.bindTo(section, "parameters",
@@ -170,7 +170,7 @@ public class ParameterSection {
 			if (!(obj instanceof Parameter))
 				return;
 			Parameter param = (Parameter) obj;
-			param.setFormula(formula);
+			param.formula = formula;
 			support.evaluate();
 			viewer.refresh();
 			editor.setDirty(true);
@@ -181,7 +181,7 @@ public class ParameterSection {
 		if (supplier == null)
 			return;
 		Collections.sort(supplier.get(),
-				(o1, o2) -> Strings.compare(o1.getName(), o2.getName()));
+				(o1, o2) -> Strings.compare(o1.name, o2.name));
 		setInput();
 	}
 
@@ -190,7 +190,7 @@ public class ParameterSection {
 			return;
 		List<Parameter> input = new ArrayList<>();
 		for (Parameter param : supplier.get()) {
-			if (param.isInputParameter() == forInputParameters)
+			if (param.isInputParameter == forInputParameters)
 				input.add(param);
 		}
 		viewer.setInput(input);
@@ -205,13 +205,13 @@ public class ParameterSection {
 		while (exists(name))
 			name = "p_" + count++;
 		Parameter p = new Parameter();
-		p.setRefId(UUID.randomUUID().toString());
-		p.setName(name);
-		p.setScope(page.scope);
-		p.setInputParameter(forInputParameters);
-		p.setValue(1.0);
+		p.refId = UUID.randomUUID().toString();
+		p.name = name;
+		p.scope = page.scope;
+		p.isInputParameter = forInputParameters;
+		p.value = 1.0;
 		if (!forInputParameters)
-			p.setFormula("1.0");
+			p.formula = "1.0";
 		params.add(p);
 		setInput();
 		editor.setDirty(true);
@@ -219,11 +219,11 @@ public class ParameterSection {
 
 	private boolean exists(String name) {
 		for (Parameter parameter : supplier.get()) {
-			if (name == null && parameter.getName() == null)
+			if (name == null && parameter.name == null)
 				return true;
-			if (name == null || parameter.getName() == null)
+			if (name == null || parameter.name == null)
 				continue;
-			if (name.toLowerCase().equals(parameter.getName().toLowerCase()))
+			if (name.toLowerCase().equals(parameter.name.toLowerCase()))
 				return true;
 		}
 		return false;
@@ -250,7 +250,7 @@ public class ParameterSection {
 				: Clipboard.readAsCalculatedParams(text, page.scope);
 		boolean skipped = false;
 		for (Parameter param : params) {
-			String name = param.getName();
+			String name = param.name;
 			if (!Parameter.isValidName(name) || exists(name)) {
 				skipped = true;
 				continue;
@@ -271,7 +271,7 @@ public class ParameterSection {
 		public Image getColumnImage(Object element, int col) {
 			Parameter parameter = (Parameter) element;
 			if (col == 0) {
-				if (parameter.getExternalSource() == null)
+				if (parameter.externalSource == null)
 					return null;
 				// currently the only external sources are shape files
 				return Images.get(ModelType.IMPACT_METHOD);
@@ -287,21 +287,21 @@ public class ParameterSection {
 			Parameter p = (Parameter) obj;
 			switch (col) {
 			case 0:
-				return p.getName();
+				return p.name;
 			case 1:
 				if (forInputParameters)
-					return Double.toString(p.getValue());
+					return Double.toString(p.value);
 				else
-					return p.getFormula();
+					return p.formula;
 			case 2:
 				if (forInputParameters)
-					return Uncertainty.string(p.getUncertainty());
+					return Uncertainty.string(p.uncertainty);
 				else
-					return Double.toString(p.getValue());
+					return Double.toString(p.value);
 			case 3:
-				return p.getDescription();
+				return p.description;
 			case 4:
-				return p.getExternalSource();
+				return p.externalSource;
 			default:
 				return null;
 			}
@@ -311,14 +311,14 @@ public class ParameterSection {
 	private class NameModifier extends TextCellModifier<Parameter> {
 		@Override
 		protected String getText(Parameter param) {
-			return param.getName();
+			return param.name;
 		}
 
 		@Override
 		protected void setText(Parameter param, String text) {
 			if (text == null)
 				return;
-			if (Objects.equals(text, param.getName()))
+			if (Objects.equals(text, param.name))
 				return;
 			String name = text.trim();
 			if (!Parameter.isValidName(name)) {
@@ -331,7 +331,7 @@ public class ParameterSection {
 						M.ParameterWithSameNameExists);
 				return;
 			}
-			param.setName(name);
+			param.name = name;
 			editor.setDirty(true);
 			support.evaluate();
 		}
@@ -347,7 +347,7 @@ public class ParameterSection {
 
 		@Override
 		protected String getItem(Parameter element) {
-			return element.getExternalSource();
+			return element.externalSource;
 		}
 
 		@Override
@@ -359,7 +359,7 @@ public class ParameterSection {
 		protected void setItem(Parameter element, String item) {
 			if (!Question.ask(M.ExternalSourceChange, M.RecalculateQuestion))
 				return;
-			element.setExternalSource(item);
+			element.externalSource = item;
 			page.sourceHandler.sourceChanged(element, item);
 		}
 	}

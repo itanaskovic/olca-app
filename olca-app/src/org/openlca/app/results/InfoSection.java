@@ -34,14 +34,14 @@ public class InfoSection {
 			link(comp, toolkit, M.ImpactAssessmentMethod, setup.impactMethod);
 		}
 		if (setup.nwSet != null) {
-			text(comp, toolkit, M.NormalizationAndWeightingSet, setup.nwSet.getName());
+			text(comp, toolkit, M.NormalizationAndWeightingSet, setup.nwSet.name);
 		}
 		buttons(comp, toolkit);
 	}
 
 	private static String targetAmountText(CalculationSetup setup) {
-		String refFlowName = setup.productSystem.referenceExchange.flow.getName();
-		return setup.getAmount() + " " + setup.getUnit().getName() + " " + refFlowName;
+		String refFlowName = setup.productSystem.referenceExchange.flow.name;
+		return setup.getAmount() + " " + setup.getUnit().name + " " + refFlowName;
 	}
 
 	static void text(Composite comp, FormToolkit toolkit, String label, String val) {

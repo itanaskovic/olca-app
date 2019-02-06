@@ -18,12 +18,11 @@ import org.openlca.core.matrix.NwSetTable;
 import org.openlca.core.model.Currency;
 import org.openlca.core.model.Project;
 import org.openlca.core.model.ProjectVariant;
+import org.openlca.core.model.descriptors.CategorizedDescriptor;
 import org.openlca.core.model.descriptors.ImpactCategoryDescriptor;
-import org.openlca.core.model.descriptors.ProcessDescriptor;
 import org.openlca.core.results.ContributionItem;
 import org.openlca.core.results.ContributionSet;
-import org.openlca.core.results.ImpactResult;
-import org.openlca.core.results.ProjectResultProvider;
+import org.openlca.core.results.ProjectResult;
 import org.openlca.util.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,18 +46,18 @@ public class ReportCalculator implements Runnable {
 		report.results.clear();
 		report.addedValues.clear();
 		report.netCosts.clear();
-		if (project.getImpactMethodId() == null)
+		if (project.impactMethodId == null)
 			return;
-		ProjectResultProvider projectResult = calcProject(project);
+		ProjectResult projectResult = calcProject(project);
 		if (projectResult == null)
 			return;
 		appendResults(projectResult);
 		appendCostResults(projectResult);
-		if (project.getNwSetId() != null)
+		if (project.nwSetId != null)
 			appendNwFactors();
 	}
 
-	private ProjectResultProvider calcProject(Project project) {
+	private ProjectResult calcProject(Project project) {
 		try {
 			ProjectCalculator calculator = new ProjectCalculator(
 					Cache.getMatrixCache(), App.getSolver());
@@ -71,14 +70,14 @@ public class ReportCalculator implements Runnable {
 
 	private void appendNwFactors() {
 		try {
-			NwSetTable table = NwSetTable.build(Database.get(),
-					project.getNwSetId());
+			NwSetTable table = NwSetTable.build(
+					Database.get(), project.nwSetId);
 			report.withNormalisation = table.hasNormalisationFactors();
 			report.withWeighting = table.hasWeightingFactors();
 			for (ReportIndicator indicator : report.indicators) {
 				if (indicator.descriptor == null)
 					continue;
-				long categoryId = indicator.descriptor.getId();
+				long categoryId = indicator.descriptor.id;
 				if (table.hasNormalisationFactors()) {
 					double nf = table.getNormalisationFactor(categoryId);
 					indicator.normalisationFactor = nf;
@@ -93,8 +92,8 @@ public class ReportCalculator implements Runnable {
 		}
 	}
 
-	private void appendResults(ProjectResultProvider result) {
-		for (ImpactCategoryDescriptor impact : result.getImpactDescriptors()) {
+	private void appendResults(ProjectResult result) {
+		for (ImpactCategoryDescriptor impact : result.getImpacts()) {
 			ReportIndicatorResult repResult = initReportResult(impact);
 			if (repResult == null)
 				continue; // should not add this indicator
@@ -102,11 +101,10 @@ public class ReportCalculator implements Runnable {
 			for (ProjectVariant variant : result.getVariants()) {
 				VariantResult varResult = new VariantResult();
 				repResult.variantResults.add(varResult);
-				varResult.variant = variant.getName();
-				ImpactResult impactResult = result.getTotalImpactResult(
+				varResult.variant = variant.name;
+				varResult.totalAmount = result.getTotalImpactResult(
 						variant, impact);
-				varResult.totalAmount = impactResult.value;
-				ContributionSet<ProcessDescriptor> set = result
+				ContributionSet<CategorizedDescriptor> set = result
 						.getResult(variant)
 						.getProcessContributions(impact);
 				appendProcessContributions(set, varResult);
@@ -125,7 +123,7 @@ public class ReportCalculator implements Runnable {
 	}
 
 	private void appendProcessContributions(
-			ContributionSet<ProcessDescriptor> set, VariantResult varResult) {
+			ContributionSet<CategorizedDescriptor> set, VariantResult varResult) {
 		Contribution rest = new Contribution();
 		varResult.contributions.add(rest);
 		rest.rest = true;
@@ -133,13 +131,13 @@ public class ReportCalculator implements Runnable {
 		rest.amount = (double) 0;
 		Set<Long> ids = getContributionProcessIds();
 		Set<Long> foundIds = new TreeSet<>();
-		for (ContributionItem<ProcessDescriptor> item : set.contributions) {
+		for (ContributionItem<CategorizedDescriptor> item : set.contributions) {
 			if (item.item == null)
 				continue;
-			if (!ids.contains(item.item.getId()))
+			if (!ids.contains(item.item.id))
 				rest.amount = rest.amount + item.amount;
 			else {
-				foundIds.add(item.item.getId());
+				foundIds.add(item.item.id);
 				addContribution(varResult, item);
 			}
 		}
@@ -147,12 +145,12 @@ public class ReportCalculator implements Runnable {
 	}
 
 	private void addContribution(VariantResult varResult,
-			ContributionItem<ProcessDescriptor> item) {
+			ContributionItem<CategorizedDescriptor> item) {
 		Contribution con = new Contribution();
 		varResult.contributions.add(con);
 		con.amount = item.amount;
 		con.rest = false;
-		con.processId = item.item.getId();
+		con.processId = item.item.id;
 	}
 
 	private Set<Long> getContributionProcessIds() {
@@ -160,7 +158,7 @@ public class ReportCalculator implements Runnable {
 		for (ReportProcess process : report.processes) {
 			if (process.descriptor == null)
 				continue;
-			ids.add(process.descriptor.getId());
+			ids.add(process.descriptor.id);
 		}
 		return ids;
 	}
@@ -182,12 +180,12 @@ public class ReportCalculator implements Runnable {
 		}
 	}
 
-	private void appendCostResults(ProjectResultProvider result) {
+	private void appendCostResults(ProjectResult result) {
 		if (result == null)
 			return;
 		String currency = getCurrency();
 		for (ProjectVariant var : result.getVariants()) {
-			double costs = result.getResult(var).getTotalCostResult();
+			double costs = result.getResult(var).totalCosts;
 			report.netCosts.add(cost(var, costs, currency));
 			double addedValue = costs == 0 ? 0 : -costs;
 			report.addedValues.add(cost(var, addedValue, currency));
@@ -201,7 +199,7 @@ public class ReportCalculator implements Runnable {
 
 	private ReportCostResult cost(ProjectVariant var, double val, String cu) {
 		ReportCostResult r = new ReportCostResult();
-		r.variant = var.getName();
+		r.variant = var.name;
 		r.value = Numbers.decimalFormat(val, 2) + " " + cu;
 		return r;
 	}
@@ -212,7 +210,7 @@ public class ReportCalculator implements Runnable {
 			Currency c = dao.getReferenceCurrency();
 			if (c == null)
 				return "?";
-			return c.code != null ? c.code : c.getName();
+			return c.code != null ? c.code : c.name;
 		} catch (Exception e) {
 			log.error("failed to load default currency", e);
 			return "?";

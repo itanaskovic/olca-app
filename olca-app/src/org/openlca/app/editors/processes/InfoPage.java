@@ -119,7 +119,7 @@ class InfoPage extends ModelPage<Process> {
 
 	private Hyperlink createDqEntryRow(Composite parent) {
 		UI.formLabel(parent, toolkit, M.DataQualityEntry);
-		Hyperlink link = UI.formLink(parent, toolkit, getDqEntryLabel());
+		Hyperlink link = UI.formLink(parent, toolkit, getDqLabel());
 		Controls.onClick(link, e -> {
 			if (getModel().dqSystem == null) {
 				Error.showBox("Please select a data quality system first");
@@ -134,7 +134,8 @@ class InfoPage extends ModelPage<Process> {
 			shell.addDisposeListener(e2 -> {
 				if (Objects.equals(oldVal, getModel().dqEntry))
 					return;
-				link.setText(getDqEntryLabel());
+				link.setText(getDqLabel());
+				link.pack();
 				getEditor().setDirty(true);
 			});
 			shell.open();
@@ -151,11 +152,30 @@ class InfoPage extends ModelPage<Process> {
 		getModel().dqEntry = null;
 	}
 
-	private String getDqEntryLabel() {
-		if (getModel().dqEntry != null)
-			return getModel().dqEntry;
-		return "(not specified)";
-
+	private String getDqLabel() {
+		Process p = getModel();
+		if (p.dqEntry == null)
+			return "(not specified)";
+		if (p.dqSystem == null)
+			return p.dqEntry;
+		int[] vals = p.dqSystem.toValues(p.dqEntry);
+		if (vals == null)
+			return p.dqEntry;
+		String label = "(";
+		for (int i = 0; i < vals.length; i++) {
+			if (vals[i] == 0) {
+				label += "n.a.";
+			} else {
+				String e = p.dqSystem.getScoreLabel(vals[i]);
+				if (e == null)
+					return p.dqEntry;
+				label += e;
+			}
+			if (i < (vals.length - 1)) {
+				label += "; ";
+			}
+		}
+		return label + ")";
 	}
 
 	private void createGeographySection(Composite body) {
@@ -187,9 +207,9 @@ class InfoPage extends ModelPage<Process> {
 
 	private String getKmlDisplayText() {
 		Process process = getModel();
-		if (process.getLocation() != null)
-			if (process.getLocation().getKmz() != null)
-				return KmlUtil.getDisplayText(process.getLocation().getKmz());
+		if (process.location != null)
+			if (process.location.kmz != null)
+				return KmlUtil.getDisplayText(process.location.kmz);
 		return "none";
 	}
 
@@ -204,16 +224,16 @@ class InfoPage extends ModelPage<Process> {
 
 	private String getKml() {
 		Process process = getModel();
-		if (process.getLocation() != null)
-			if (process.getLocation().getKmz() != null)
-				return KmlUtil.toKml(process.getLocation().getKmz());
+		if (process.location != null)
+			if (process.location.kmz != null)
+				return KmlUtil.toKml(process.location.kmz);
 		return null;
 	}
 
 	private String getName() {
-		if (getModel().getLocation() == null)
+		if (getModel().location == null)
 			return "";
-		return getModel().getLocation().getName();
+		return getModel().location.name;
 	}
 
 	private class MapEditorDispatch extends HyperlinkAdapter implements
@@ -252,26 +272,26 @@ class InfoPage extends ModelPage<Process> {
 			String[] nameAndCode = promptForNameAndCode();
 			if (nameAndCode == null) // user aborted dialog
 				return null;
-			location.setName(nameAndCode[0]);
-			location.setCode(nameAndCode[1]);
-			location.setRefId(KeyGen.get(nameAndCode[1]));
+			location.name = nameAndCode[0];
+			location.code = nameAndCode[1];
+			location.refId = KeyGen.get(nameAndCode[1]);
 			if (kml != null)
-				location.setKmz(Geometries.kmlToKmz(kml));
+				location.kmz = Geometries.kmlToKmz(kml);
 			else
-				location.setKmz(null);
+				location.kmz = null;
 			return locationDao.insert(location);
 		}
 
 		@Override
 		public boolean hasModel() {
-			return getModel().getLocation() != null;
+			return getModel().location != null;
 		}
 
 		@Override
 		public void openModel() {
 			if (!hasModel())
 				return;
-			App.openEditor(getModel().getLocation());
+			App.openEditor(getModel().location);
 		}
 
 		private String[] promptForNameAndCode() {

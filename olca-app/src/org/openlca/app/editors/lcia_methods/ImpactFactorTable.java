@@ -132,11 +132,11 @@ class ImpactFactorTable {
 		Collections.sort(factors, (o1, o2) -> {
 			Flow f1 = o1.flow;
 			Flow f2 = o2.flow;
-			int c = Strings.compare(f1.getName(), f2.getName());
+			int c = Strings.compare(f1.name, f2.name);
 			if (c != 0)
 				return c;
-			String cat1 = CategoryPath.getShort(f1.getCategory());
-			String cat2 = CategoryPath.getShort(f2.getCategory());
+			String cat1 = CategoryPath.getShort(f1.category);
+			String cat2 = CategoryPath.getShort(f2.category);
 			return Strings.compare(cat1, cat2);
 		});
 	}
@@ -147,7 +147,7 @@ class ImpactFactorTable {
 		Action remove = Actions.onRemove(this::onRemove);
 		Actions.bind(viewer, add, remove, copy);
 		Tables.onDeletePressed(viewer, (e) -> onRemove());
-		Tables.addDropSupport(viewer, (descriptors) -> createFactors(descriptors));
+		Tables.onDrop(viewer, this::createFactors);
 		Tables.onDoubleClick(viewer, (event) -> {
 			TableItem item = Tables.getItem(viewer, event);
 			if (item == null) {
@@ -173,17 +173,18 @@ class ImpactFactorTable {
 	private void createFactors(List<BaseDescriptor> descriptors) {
 		if (descriptors == null || descriptors.isEmpty())
 			return;
-		for (BaseDescriptor descriptor : descriptors) {
-			if (descriptors == null || descriptor.getModelType() != ModelType.FLOW)
+		for (BaseDescriptor d : descriptors) {
+			if (d == null || d.type != ModelType.FLOW)
 				continue;
-			if (contains(descriptor))
+			if (contains(d))
 				continue;
-			Flow flow = new FlowDao(database).getForId(descriptor.getId());
+			Flow flow = new FlowDao(database).getForId(d.id);
+			if (flow == null)
+				continue;
 			ImpactFactor f = new ImpactFactor();
 			f.flow = flow;
 			f.flowPropertyFactor = flow.getReferenceFactor();
-			f.unit = flow.getReferenceFactor()
-					.getFlowProperty().getUnitGroup().getReferenceUnit();
+			f.unit = flow.getReferenceFactor().flowProperty.unitGroup.referenceUnit;
 			f.value = 1.0;
 			category.impactFactors.add(f);
 		}
@@ -193,7 +194,7 @@ class ImpactFactorTable {
 
 	private boolean contains(BaseDescriptor flow) {
 		for (ImpactFactor f : category.impactFactors)
-			if (f.flow.getId() == flow.getId())
+			if (f.flow.id == flow.id)
 				return true;
 		return false;
 	}
@@ -231,11 +232,11 @@ class ImpactFactorTable {
 			case 0:
 				return Labels.getDisplayName(f.flow);
 			case 1:
-				return CategoryPath.getShort(f.flow.getCategory());
+				return CategoryPath.getShort(f.flow.category);
 			case 2:
 				if (f.flowPropertyFactor == null)
 					return null;
-				return Labels.getDisplayName(f.flowPropertyFactor.getFlowProperty());
+				return Labels.getDisplayName(f.flowPropertyFactor.flowProperty);
 			case 3:
 				if (f.formula == null || !showFormulas)
 					return Double.toString(f.value);
@@ -255,9 +256,9 @@ class ImpactFactorTable {
 				return null;
 			String impactUnit = category.referenceUnit;
 			if (Strings.notEmpty(impactUnit))
-				return impactUnit + "/" + factor.unit.getName();
+				return impactUnit + "/" + factor.unit.name;
 			else
-				return "1/" + factor.unit.getName();
+				return "1/" + factor.unit.name;
 		}
 
 	}
@@ -267,8 +268,8 @@ class ImpactFactorTable {
 		@Override
 		protected FlowProperty[] getItems(ImpactFactor element) {
 			List<FlowProperty> items = new ArrayList<>();
-			for (FlowPropertyFactor factor : element.flow.getFlowPropertyFactors())
-				items.add(factor.getFlowProperty());
+			for (FlowPropertyFactor factor : element.flow.flowPropertyFactors)
+				items.add(factor.flowProperty);
 			return items.toArray(new FlowProperty[items.size()]);
 		}
 
@@ -276,18 +277,18 @@ class ImpactFactorTable {
 		protected FlowProperty getItem(ImpactFactor element) {
 			if (element.flowPropertyFactor == null)
 				return null;
-			return element.flowPropertyFactor.getFlowProperty();
+			return element.flowPropertyFactor.flowProperty;
 		}
 
 		@Override
 		protected String getText(FlowProperty value) {
-			return value.getName();
+			return value.name;
 		}
 
 		@Override
 		protected void setItem(ImpactFactor f, FlowProperty prop) {
 			if (f.flowPropertyFactor == null
-					|| !Objects.equals(prop, f.flowPropertyFactor.getFlowProperty())) {
+					|| !Objects.equals(prop, f.flowPropertyFactor.flowProperty)) {
 				FlowPropertyFactor factor = f.flow.getFactor(prop);
 				f.flowPropertyFactor = factor;
 				editor.setDirty(true);
@@ -301,12 +302,12 @@ class ImpactFactorTable {
 		protected Unit[] getItems(ImpactFactor f) {
 			if (f.flowPropertyFactor == null)
 				return new Unit[0];
-			if (f.flowPropertyFactor.getFlowProperty() == null)
+			if (f.flowPropertyFactor.flowProperty == null)
 				return new Unit[0];
-			if (f.flowPropertyFactor.getFlowProperty().getUnitGroup() == null)
+			if (f.flowPropertyFactor.flowProperty.unitGroup == null)
 				return new Unit[0];
 			List<Unit> items = new ArrayList<>();
-			for (Unit unit : f.flowPropertyFactor.getFlowProperty().getUnitGroup().getUnits())
+			for (Unit unit : f.flowPropertyFactor.flowProperty.unitGroup.units)
 				items.add(unit);
 			return items.toArray(new Unit[items.size()]);
 		}
@@ -318,7 +319,7 @@ class ImpactFactorTable {
 
 		@Override
 		protected String getText(Unit value) {
-			return value.getName();
+			return value.name;
 		}
 
 		@Override

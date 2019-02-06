@@ -108,7 +108,7 @@ public class ProductSystemGraphEditor extends GraphicalEditor {
 		Process refProcess = getSystemEditor().getModel().referenceProcess;
 		if (refProcess == null)
 			return new ProductSystemNode(this);
-		long referenceId = refProcess.getId();
+		long referenceId = refProcess.id;
 		ProductSystemNode node = new ProductSystemNode(this);
 		node.add(createProcessNode(referenceId));
 		return node;
@@ -130,7 +130,7 @@ public class ProductSystemGraphEditor extends GraphicalEditor {
 	public void createNecessaryLinks(ProcessNode node) {
 		MutableProcessLinkSearchMap linkSearch = node.parent().linkSearch;
 		ProductSystemNode sysNode = node.parent();
-		long id = node.process.getId();
+		long id = node.process.id;
 		for (ProcessLink pLink : linkSearch.getLinks(id)) {
 			boolean isProvider = pLink.providerId == id;
 			long otherID = isProvider ? pLink.processId : pLink.providerId;
@@ -139,7 +139,7 @@ public class ProductSystemGraphEditor extends GraphicalEditor {
 				continue;
 			ProcessNode outNode = null;
 			ProcessNode inNode = null;
-			FlowType type = sysNode.flowTypes.get(pLink.flowId);
+			FlowType type = sysNode.flows.type(pLink.flowId);
 			if (type == FlowType.PRODUCT_FLOW) {
 				outNode = isProvider ? node : otherNode;
 				inNode = isProvider ? otherNode : node;

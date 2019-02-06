@@ -29,7 +29,7 @@ import org.openlca.core.results.ContributionItem;
 import org.openlca.core.results.ContributionSet;
 import org.openlca.core.results.Contributions;
 import org.openlca.core.results.ImpactResult;
-import org.openlca.core.results.SimpleResultProvider;
+import org.openlca.core.results.SimpleResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,13 +40,13 @@ public class NwResultPage extends FormPage {
 
 	private Logger log = LoggerFactory.getLogger(getClass());
 
-	private SimpleResultProvider<?> result;
+	private SimpleResult result;
 	private CalculationSetup setup;
 	private NwSetTable nwSetTable;
 	private Composite body;
 	private FormToolkit toolkit;
 
-	public NwResultPage(FormEditor editor, SimpleResultProvider<?> result, CalculationSetup setup) {
+	public NwResultPage(FormEditor editor, SimpleResult result, CalculationSetup setup) {
 		super(editor, "NwResultPage", M.NormalizationWeighting);
 		this.result = result;
 		this.setup = setup;
@@ -105,30 +105,19 @@ public class NwResultPage extends FormPage {
 		TableViewer viewer = Tables.createViewer(composite, columns);
 		viewer.setLabelProvider(new Label());
 		Tables.bindColumnWidths(viewer, colWidths);
-		List<ContributionItem<ImpactResult>> items = makeContributions(results);
-		viewer.setInput(items);
-		Actions.bind(viewer, TableClipboard.onCopy(viewer));
-	}
-
-	private List<ContributionItem<ImpactResult>> makeContributions(
-			List<ImpactResult> results) {
-		ContributionSet<ImpactResult> set = Contributions.calculate(results,
-				new Contributions.Function<ImpactResult>() {
-					@Override
-					public double value(ImpactResult impactResult) {
-						return impactResult.value;
-					}
-				});
+		ContributionSet<ImpactResult> set = Contributions.calculate(
+				results, impactResult -> impactResult.value);
 		List<ContributionItem<ImpactResult>> items = set.contributions;
 		Contributions.sortDescending(items);
-		return items;
+		viewer.setInput(items);
+		Actions.bind(viewer, TableClipboard.onCopy(viewer));
 	}
 
 	private NwSetTable loadNwSetTable() {
 		if (setup.nwSet == null)
 			return null;
 		try {
-			return NwSetTable.build(Database.get(), setup.nwSet.getId());
+			return NwSetTable.build(Database.get(), setup.nwSet.id);
 		} catch (Exception e) {
 			log.error("failed to load NW set factors from database", e);
 			return null;
@@ -164,7 +153,7 @@ public class NwResultPage extends FormPage {
 				return Numbers.format(item.amount);
 			case 2:
 				if (setup.nwSet != null)
-					return setup.nwSet.getWeightedScoreUnit();
+					return setup.nwSet.weightedScoreUnit;
 			default:
 				return null;
 			}

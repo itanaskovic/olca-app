@@ -10,20 +10,19 @@ import org.eclipse.ui.forms.widgets.ScrolledForm;
 import org.openlca.app.M;
 import org.openlca.app.components.ResultTypeSelection;
 import org.openlca.app.components.ResultTypeSelection.EventHandler;
-import org.openlca.app.db.Cache;
 import org.openlca.app.util.CostResultDescriptor;
 import org.openlca.app.util.UI;
 import org.openlca.core.model.descriptors.FlowDescriptor;
 import org.openlca.core.model.descriptors.ImpactCategoryDescriptor;
-import org.openlca.core.results.FullResultProvider;
+import org.openlca.core.results.FullResult;
 
 public class SankeySelectionDialog extends FormDialog implements EventHandler {
 
 	public double cutoff = 0.1;
 	public Object selection;
-	private final FullResultProvider result;
+	private final FullResult result;
 
-	public SankeySelectionDialog(FullResultProvider result) {
+	public SankeySelectionDialog(FullResult result) {
 		super(UI.shell());
 		this.result = result;
 	}
@@ -35,7 +34,7 @@ public class SankeySelectionDialog extends FormDialog implements EventHandler {
 				M.SettingsForTheSankeyDiagram);
 		Composite body = UI.formBody(form, toolkit);
 		UI.gridLayout(body, 2);
-		ResultTypeSelection.on(result, Cache.getEntityCache())
+		ResultTypeSelection.on(result)
 				.withEventHandler(this).withSelection(selection)
 				.create(body, toolkit);
 		createCutoffSpinner(toolkit, body);

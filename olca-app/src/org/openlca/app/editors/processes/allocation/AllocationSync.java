@@ -64,7 +64,7 @@ class AllocationSync {
 			AllocationFactor factor = getFactor(f.product, method);
 			if (factor == null)
 				continue;
-			factor.setValue(f.value);
+			factor.value = f.value;
 		}
 	}
 
@@ -74,28 +74,28 @@ class AllocationSync {
 				AllocationFactor factor = getCausalFactor(f.product, e);
 				if (factor == null)
 					continue;
-				factor.setValue(f.value);
+				factor.value = f.value;
 			}
 		}
 	}
 
 	/** For physical and economic allocation. */
 	private AllocationFactor getFactor(Exchange product, AllocationMethod method) {
-		for (AllocationFactor factor : process.getAllocationFactors()) {
-			if (factor.getAllocationType() != method)
+		for (AllocationFactor factor : process.allocationFactors) {
+			if (factor.method != method)
 				continue;
-			if (factor.getProductId() == product.flow.getId())
+			if (factor.productId == product.flow.id)
 				return factor;
 		}
 		return null;
 	}
 
 	private AllocationFactor getCausalFactor(Exchange product, Exchange exchange) {
-		for (AllocationFactor factor : process.getAllocationFactors()) {
-			if (factor.getAllocationType() != AllocationMethod.CAUSAL)
+		for (AllocationFactor factor : process.allocationFactors) {
+			if (factor.method != AllocationMethod.CAUSAL)
 				continue;
-			if (factor.getProductId() == product.flow.getId()
-					&& Objects.equals(exchange, factor.getExchange()))
+			if (factor.productId == product.flow.id
+					&& Objects.equals(exchange, factor.exchange))
 				return factor;
 		}
 		return null;
@@ -114,7 +114,7 @@ class AllocationSync {
 				Flow flow = product.flow;
 				FlowPropertyFactor factor = flow.getFactor(commonProp);
 				if (factor != null)
-					amount = refAmount * factor.getConversionFactor();
+					amount = refAmount * factor.conversionFactor;
 			}
 			totalAmount += amount;
 			factors.add(new F(product, amount));
@@ -131,9 +131,8 @@ class AllocationSync {
 				|| exchange.flowPropertyFactor == null)
 			return 0;
 		double amount = exchange.amount;
-		double unitFactor = exchange.unit.getConversionFactor();
-		double propFactor = exchange.flowPropertyFactor
-				.getConversionFactor();
+		double unitFactor = exchange.unit.conversionFactor;
+		double propFactor = exchange.flowPropertyFactor.conversionFactor;
 		if (propFactor == 0)
 			return 0;
 		return amount * unitFactor / propFactor;
@@ -157,9 +156,9 @@ class AllocationSync {
 
 	private List<FlowProperty> getProperties(Flow flow, AllocationMethod method) {
 		List<FlowProperty> properties = new ArrayList<>();
-		for (FlowPropertyFactor factor : flow.getFlowPropertyFactors()) {
-			FlowProperty prop = factor.getFlowProperty();
-			if (match(prop.getFlowPropertyType(), method))
+		for (FlowPropertyFactor factor : flow.flowPropertyFactors) {
+			FlowProperty prop = factor.flowProperty;
+			if (match(prop.flowPropertyType, method))
 				properties.add(prop);
 		}
 		return properties;

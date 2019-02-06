@@ -32,7 +32,7 @@ class ReportVariantSync {
 		while (existingIds.contains(newId))
 			newId++;
 		ReportVariant var = new ReportVariant(newId);
-		var.name = variant.getName();
+		var.name = variant.name;
 		report.variants.add(var);
 		addParameterValues(newId, report);
 	}
@@ -42,7 +42,7 @@ class ReportVariantSync {
 			if (parameter.redef == null)
 				parameter.putValue(newId, 0);
 			else
-				parameter.putValue(newId, parameter.redef.getValue());
+				parameter.putValue(newId, parameter.redef.value);
 		}
 	}
 
@@ -61,21 +61,28 @@ class ReportVariantSync {
 	}
 
 	/**
-	 * Sets the given name in the project and report variant. Note that the
-	 * given project variant should contain the old variant because this is used
-	 * to find the respective report variant.
+	 * Sets the given name in the project and report variant. Note that the given
+	 * project variant should contain the old variant name because this is used to
+	 * find the respective report variant.
 	 */
 	public void updateName(ProjectVariant variant, String newName) {
 		ReportVariant var = findReportVariant(variant);
 		if (var != null)
 			var.name = newName;
-		variant.setName(newName);
+		variant.name = newName;
 	}
 
 	public void updateDescription(ProjectVariant variant, String description) {
 		ReportVariant var = findReportVariant(variant);
 		if (var != null)
 			var.description = description;
+	}
+
+	public void updateDisabled(ProjectVariant pvar) {
+		ReportVariant rvar = findReportVariant(pvar);
+		if (rvar != null) {
+			rvar.isDisabled = pvar.isDisabled;
+		}
 	}
 
 	public String getDescription(ProjectVariant variant) {
@@ -87,7 +94,7 @@ class ReportVariantSync {
 		if (editor.getReport() == null || variant == null)
 			return null;
 		for (ReportVariant reportVariant : editor.getReport().variants) {
-			if (Objects.equals(variant.getName(), reportVariant.name))
+			if (Objects.equals(variant.name, reportVariant.name))
 				return reportVariant;
 		}
 		return null;

@@ -5,7 +5,7 @@ import java.util.List;
 import org.openlca.app.db.Database;
 import org.openlca.app.editors.graphical.ProductSystemGraphEditor;
 import org.openlca.app.editors.graphical.search.MutableProcessLinkSearchMap;
-import org.openlca.core.matrix.cache.FlowTypeTable;
+import org.openlca.core.matrix.cache.FlowTable;
 import org.openlca.core.model.ProcessLink;
 import org.openlca.core.model.ProductSystem;
 
@@ -13,7 +13,7 @@ public class ProductSystemNode extends Node {
 
 	public final ProductSystemGraphEditor editor;
 	public final MutableProcessLinkSearchMap linkSearch;
-	public final FlowTypeTable flowTypes = FlowTypeTable.create(Database.get());
+	public final FlowTable flows = FlowTable.create(Database.get());
 
 	public ProductSystemNode(ProductSystemGraphEditor editor) {
 		List<ProcessLink> links = editor.getSystemEditor()
@@ -34,14 +34,14 @@ public class ProductSystemNode extends Node {
 
 	public ProcessNode getProcessNode(long id) {
 		for (ProcessNode node : getChildren())
-			if (node.process.getId() == id)
+			if (node.process.id == id)
 				return node;
 		return null;
 	}
 
 	@Override
 	public String getName() {
-		return getProductSystem().getName();
+		return getProductSystem().name;
 	}
 
 	public void highlightMatchingExchanges(ExchangeNode toMatch) {

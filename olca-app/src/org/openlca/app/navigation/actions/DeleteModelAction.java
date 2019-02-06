@@ -123,9 +123,9 @@ class DeleteModelAction extends Action implements INavigationAction {
 			boolean empty = element.getChildren().isEmpty();
 			int answer = IDialogConstants.CANCEL_ID;
 			if (!empty) {
-				answer = dontAskEmpty ? IDialogConstants.YES_ID : askNotEmptyDelete(category.getName());
+				answer = dontAskEmpty ? IDialogConstants.YES_ID : askNotEmptyDelete(category.name);
 			} else {
-				answer = dontAsk ? IDialogConstants.YES_ID : askDelete(category.getName());
+				answer = dontAsk ? IDialogConstants.YES_ID : askDelete(category.name);
 			}
 			if (answer == IDialogConstants.NO_TO_ALL_ID)
 				break;
@@ -141,22 +141,22 @@ class DeleteModelAction extends Action implements INavigationAction {
 				}
 			}
 			if (delete(element)) {
-				INavigationElement<?> typeElement = Navigator.findElement(category.getModelType());
+				INavigationElement<?> typeElement = Navigator.findElement(category.modelType);
 				Navigator.refresh(typeElement);
 			}
 		}
 		categories.clear();
 	}
 
-	private boolean isUsed(CategorizedDescriptor descriptor) {
+	private boolean isUsed(CategorizedDescriptor d) {
 		IUseSearch<CategorizedDescriptor> search = IUseSearch.FACTORY
-				.createFor(descriptor.getModelType(), Database.get());
-		List<CategorizedDescriptor> descriptors = search.findUses(descriptor);
+				.createFor(d.type, Database.get());
+		List<CategorizedDescriptor> descriptors = search.findUses(d);
 		if (descriptors.isEmpty())
 			return false;
 		if (showInUseMessage) {
 			MessageDialogWithToggle dialog = MessageDialogWithToggle.openError(UI.shell(), M.CannotDelete,
-					descriptor.getName() + ": " + M.CannotDeleteMessage,
+					d.name + ": " + M.CannotDeleteMessage,
 					M.DoNotShowThisMessageAgain, false, null, null);
 			showInUseMessage = !dialog.getToggleState();
 		}
@@ -168,9 +168,9 @@ class DeleteModelAction extends Action implements INavigationAction {
 		try {
 			log.trace("delete model {}", descriptor);
 			IDatabase database = Database.get();
-			Class<T> clazz = (Class<T>) descriptor.getModelType().getModelClass();
+			Class<T> clazz = (Class<T>) descriptor.type.getModelClass();
 			BaseDao<T> dao = Daos.base(database, clazz);
-			T instance = dao.getForId(descriptor.getId());
+			T instance = dao.getForId(descriptor.id);
 			dao.delete(instance);
 			Cache.evict(descriptor);
 			DatabaseDir.deleteDir(descriptor);
@@ -205,10 +205,10 @@ class DeleteModelAction extends Action implements INavigationAction {
 		Category category = element.getContent();
 		try {
 			CategoryDao dao = new CategoryDao(Database.get());
-			Category parent = category.getCategory();
+			Category parent = category.category;
 			if (parent != null) {
-				parent.getChildCategories().remove(category);
-				category.setCategory(null);
+				parent.childCategories.remove(category);
+				category.category = null;
 				dao.update(parent);
 			}
 			dao.delete(category);

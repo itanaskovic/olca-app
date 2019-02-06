@@ -19,45 +19,45 @@ import org.openlca.core.model.descriptors.BaseDescriptor;
 import org.openlca.core.model.descriptors.CategoryDescriptor;
 import org.openlca.core.model.descriptors.FlowDescriptor;
 import org.openlca.core.model.descriptors.ProcessDescriptor;
-import org.openlca.core.results.FullResultProvider;
-import org.openlca.core.results.IResultProvider;
+import org.openlca.core.results.FullResult;
+import org.openlca.core.results.IResult;
 
 public class Images {
 
 	public static Image get(RootEntity entity) {
 		if (entity instanceof Source) {
 			Source source = (Source) entity;
-			if (source.getExternalFile() != null)
-				return get(FileType.forName(source.getExternalFile()));
+			if (source.externalFile != null)
+				return get(FileType.forName(source.externalFile));
 		}
 		if (entity instanceof Process)
-			return get(((Process) entity).getProcessType());
+			return get(((Process) entity).processType);
 		if (entity instanceof Flow)
-			return get(((Flow) entity).getFlowType());
+			return get(((Flow) entity).flowType);
 		return get(ModelType.forModelClass(entity.getClass()));
 	}
 
 	public static Image get(BaseDescriptor d) {
-		if (d == null || d.getModelType() == null)
+		if (d == null || d.type == null)
 			return null;
-		switch (d.getModelType()) {
+		switch (d.type) {
 		case PROCESS:
-			return get(((ProcessDescriptor) d).getProcessType());
+			return get(((ProcessDescriptor) d).processType);
 		case FLOW:
-			return get(((FlowDescriptor) d).getFlowType());
+			return get(((FlowDescriptor) d).flowType);
 		case CATEGORY:
 			CategoryDescriptor cd = (CategoryDescriptor) d;
-			ModelIcon icon = categoryIcon(cd.getCategoryType());
+			ModelIcon icon = categoryIcon(cd.categoryType);
 			return ImageManager.get(icon);
 		default:
-			return get(d.getModelType());
+			return get(d.type);
 		}
 	}
 
-	public static Image get(Category category) {
-		if (category == null)
+	public static Image get(Category c) {
+		if (c == null)
 			return null;
-		ModelIcon icon = categoryIcon(category.getModelType());
+		ModelIcon icon = categoryIcon(c.modelType);
 		if (icon == null)
 			return Icon.FOLDER.get();
 		return ImageManager.get(icon);
@@ -130,10 +130,10 @@ public class Images {
 		return null;
 	}
 
-	public static Image get(IResultProvider result) {
+	public static Image get(IResult result) {
 		if (result == null)
 			return null;
-		if (result instanceof FullResultProvider)
+		if (result instanceof FullResult)
 			return Icon.ANALYSIS_RESULT.get();
 		return Icon.QUICK_RESULT.get();
 	}
@@ -156,29 +156,29 @@ public class Images {
 
 	public static ImageDescriptor descriptor(RootEntity entity) {
 		if (entity instanceof Process)
-			return descriptor(((Process) entity).getProcessType());
+			return descriptor(((Process) entity).processType);
 		if (entity instanceof Flow)
-			return descriptor(((Flow) entity).getFlowType());
+			return descriptor(((Flow) entity).flowType);
 		return descriptor(ModelType.forModelClass(entity.getClass()));
 	}
 
-	public static ImageDescriptor descriptor(BaseDescriptor descriptor) {
-		if (descriptor == null || descriptor.getModelType() == null)
+	public static ImageDescriptor descriptor(BaseDescriptor d) {
+		if (d == null || d.type == null)
 			return null;
-		switch (descriptor.getModelType()) {
+		switch (d.type) {
 		case PROCESS:
-			return descriptor(((ProcessDescriptor) descriptor).getProcessType());
+			return descriptor(((ProcessDescriptor) d).processType);
 		case FLOW:
-			return descriptor(((FlowDescriptor) descriptor).getFlowType());
+			return descriptor(((FlowDescriptor) d).flowType);
 		default:
-			return descriptor(descriptor.getModelType());
+			return descriptor(d.type);
 		}
 	}
 
 	public static ImageDescriptor descriptor(Category category) {
 		if (category == null)
 			return null;
-		ModelIcon icon = categoryIcon(category.getModelType());
+		ModelIcon icon = categoryIcon(category.modelType);
 		if (icon == null)
 			return Icon.FOLDER.descriptor();
 		return ImageManager.descriptor(icon);

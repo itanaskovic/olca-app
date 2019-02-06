@@ -2,8 +2,6 @@ package org.openlca.app.editors.comments;
 
 import java.util.List;
 
-import javafx.scene.web.WebEngine;
-
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.widgets.Composite;
@@ -13,7 +11,6 @@ import org.eclipse.ui.forms.editor.FormPage;
 import org.eclipse.ui.forms.widgets.ScrolledForm;
 import org.openlca.app.App;
 import org.openlca.app.M;
-import org.openlca.app.cloud.CloudUtil;
 import org.openlca.app.db.Database;
 import org.openlca.app.rcp.html.HtmlView;
 import org.openlca.app.rcp.html.WebPage;
@@ -21,6 +18,7 @@ import org.openlca.app.rcp.images.Images;
 import org.openlca.app.util.UI;
 import org.openlca.cloud.model.Comment;
 import org.openlca.cloud.model.Comments;
+import org.openlca.cloud.util.Datasets;
 import org.openlca.core.database.CategoryDao;
 import org.openlca.core.database.Daos;
 import org.openlca.core.model.CategorizedEntity;
@@ -30,6 +28,8 @@ import org.openlca.core.model.descriptors.CategorizedDescriptor;
 import org.openlca.util.Strings;
 
 import com.google.gson.Gson;
+
+import javafx.scene.web.WebEngine;
 
 public class CommentsPage extends FormPage implements WebPage {
 
@@ -46,7 +46,7 @@ public class CommentsPage extends FormPage implements WebPage {
 	public CommentsPage(FormEditor editor, Comments comments, CategorizedEntity model) {
 		super(editor, "CommentsPage", M.Comments);
 		this.model = model;
-		this.comments = comments.getForRefId(model.getRefId());
+		this.comments = comments.getForRefId(model.refId);
 	}
 
 	@Override
@@ -54,7 +54,7 @@ public class CommentsPage extends FormPage implements WebPage {
 		String title = getTitle();
 		Image image = null;
 		if (model != null) {
-			title += ": " + model.getName();
+			title += ": " + model.name;
 			image = Images.get(model);
 		}
 		ScrolledForm form = UI.formHeader(mForm, title, image);
@@ -85,10 +85,10 @@ public class CommentsPage extends FormPage implements WebPage {
 			return null;
 		CategorizedDescriptor descriptor = getDescriptor(comment.type, comment.refId);
 		Category category = getCategory(descriptor);
-		List<String> categories = CloudUtil.getCategories(category);
+		List<String> categories = Datasets.getCategories(category);
 		if (categories == null || categories.size() == 0)
-			return descriptor.getName();
-		return Strings.join(categories, '/') + "/" + descriptor.getName();
+			return descriptor.name;
+		return Strings.join(categories, '/') + "/" + descriptor.name;
 	}
 
 	private CategorizedDescriptor getDescriptor(ModelType type, String refId) {
@@ -96,9 +96,9 @@ public class CommentsPage extends FormPage implements WebPage {
 	}
 
 	private Category getCategory(CategorizedDescriptor descriptor) {
-		if (descriptor.getCategory() == null)
+		if (descriptor.category == null)
 			return null;
-		return new CategoryDao(Database.get()).getForId(descriptor.getCategory());
+		return new CategoryDao(Database.get()).getForId(descriptor.category);
 	}
 
 	public class Js {

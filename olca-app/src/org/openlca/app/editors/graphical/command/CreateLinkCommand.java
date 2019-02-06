@@ -52,23 +52,23 @@ public class CreateLinkCommand extends Command {
 		ProductSystemNode sysNode = sysNode();
 		if (sysNode == null)
 			return processLink;
-		FlowType type = sysNode.flowTypes.get(flowId);
+		FlowType type = sysNode.flows.type(flowId);
 		if (input != null) {
-			long processID = input.parent().process.getId();
+			long processID = input.parent().process.id;
 			if (type == FlowType.PRODUCT_FLOW) {
 				processLink.processId = processID;
-				processLink.exchangeId = input.exchange.getId();
+				processLink.exchangeId = input.exchange.id;
 			} else if (type == FlowType.WASTE_FLOW) {
 				processLink.providerId = processID;
 			}
 		}
 		if (output != null) {
-			long processID = output.parent().process.getId();
+			long processID = output.parent().process.id;
 			if (type == FlowType.PRODUCT_FLOW) {
 				processLink.providerId = processID;
 			} else if (type == FlowType.WASTE_FLOW) {
 				processLink.processId = processID;
-				processLink.exchangeId = output.exchange.getId();
+				processLink.exchangeId = output.exchange.id;
 			}
 		}
 		return processLink;
@@ -98,10 +98,10 @@ public class CreateLinkCommand extends Command {
 	private void refreshNodes() {
 		ProductSystemNode sys = sysNode();
 		ProcessNode outProc = sys.getProcessNode(
-				link.outputNode.process.getId());
+				link.outputNode.process.id);
 		output = outProc.getOutput(link.processLink);
 		ProcessNode inProc = sys.getProcessNode(
-				link.inputNode.process.getId());
+				link.inputNode.process.id);
 		input = inProc.getInput(link.processLink);
 	}
 
@@ -133,7 +133,7 @@ public class CreateLinkCommand extends Command {
 		}
 		if (node == null)
 			output = null;
-		else if (!node.parent().isConnected(node.exchange.getId()))
+		else if (!node.parent().isConnected(node.exchange.id))
 			output = node;
 	}
 }

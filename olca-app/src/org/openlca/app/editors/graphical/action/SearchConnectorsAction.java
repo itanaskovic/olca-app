@@ -53,19 +53,19 @@ class SearchConnectorsAction extends EditorAction {
 
 	private void executeRequest(ExchangeNode exchangeNode) {
 		ProductSystemNode model = node.parent();
-		long exchangeId = exchangeNode.exchange.getId();
-		long flowId = exchangeNode.exchange.flow.getId();
-		long nodeId = node.process.getId();
-		boolean isWaste = exchangeNode.exchange.flow.getFlowType() == FlowType.WASTE_FLOW;
+		long exchangeId = exchangeNode.exchange.id;
+		long flowId = exchangeNode.exchange.flow.id;
+		long nodeId = node.process.id;
+		boolean isWaste = exchangeNode.exchange.flow.flowType == FlowType.WASTE_FLOW;
 		ConnectionDialog dialog = new ConnectionDialog(exchangeNode);
 		if (dialog.open() == IDialogConstants.OK_ID) {
 			List<ProcessDescriptor> toCreate = dialog.toCreate();
 			List<ConnectionInput> toConnect = new ArrayList<>();
 			for (Pair<ProcessDescriptor, Long> next : dialog.toConnect())
 				if ((type == PROVIDER && !isWaste) || (type == RECIPIENTS && isWaste))
-					toConnect.add(new ConnectionInput(next.getLeft().getId(), flowId, nodeId, exchangeId, isWaste));
+					toConnect.add(new ConnectionInput(next.getLeft().id, flowId, nodeId, exchangeId, isWaste));
 				else
-					toConnect.add(new ConnectionInput(nodeId, flowId, next.getLeft().getId(), next.getRight(), isWaste));
+					toConnect.add(new ConnectionInput(nodeId, flowId, next.getLeft().id, next.getRight(), isWaste));
 			Command command = null;
 			if (type == PROVIDER)
 				command = MassCreationCommand.providers(toCreate, toConnect, model);

@@ -8,7 +8,6 @@ import org.eclipse.draw2d.geometry.Point;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Image;
 import org.openlca.app.M;
-import org.openlca.app.db.Cache;
 import org.openlca.app.editors.graphical.layout.Animation;
 import org.openlca.app.rcp.images.Icon;
 import org.openlca.app.util.Labels;
@@ -39,10 +38,9 @@ class ExchangeFigure extends Label {
 		String text = getPrefix() + ": " + node.getName() + "\n";
 		if (node.exchange.flow == null)
 			return text;
-		if (node.exchange.flow.getCategory() != null) {
+		if (node.exchange.flow.category != null) {
 			text += M.Category + ": " + Labels.getShortCategory(
-					Descriptors.toDescriptor(node.exchange.flow),
-					Cache.getEntityCache()) + "\n";
+					Descriptors.toDescriptor(node.exchange.flow)) + "\n";
 		}
 		text += M.Amount + ": " + Numbers.format(node.exchange.amount);
 		return text;
@@ -50,7 +48,7 @@ class ExchangeFigure extends Label {
 
 	private String getPrefix() {
 		if (node.exchange.isAvoided) {
-			if (node.exchange.flow.getFlowType() == FlowType.PRODUCT_FLOW)
+			if (node.exchange.flow.flowType == FlowType.PRODUCT_FLOW)
 				return M.AvoidedProductFlow;
 			return M.AvoidedWasteFlow;
 		}
