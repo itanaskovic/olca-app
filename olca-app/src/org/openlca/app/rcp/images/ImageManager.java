@@ -160,10 +160,10 @@ class ImageManager {
 
 		@Override
 		protected void drawCompositeImage(int width, int height) {
-			drawImage(zoom -> image.getImageData(zoom), 0, 0);
+			drawImage(image.getImageData(), 0, 0);
 			int x = size.x - overlaySize.x;
 			int y = size.y - overlaySize.y;
-			drawImage(zoom -> overlay.getImageData(zoom), x, y);
+			drawImage(overlay.getImageData(), x, y);
 		}
 
 		@Override
